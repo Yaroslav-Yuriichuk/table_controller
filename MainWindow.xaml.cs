@@ -38,20 +38,27 @@ namespace Table
         private DateTime lockTime, unLockTime;
         private DateTime timeNotificationIntervalStarted;
         private DayInfo today;
-        private List<DayInfo> allDays;
+        private List<DayInfo> lastWeekDayInfos;
+        private List<DayInfo> lastMonthDayInfos;
+        private List<DayInfo> allDaysDayInfos;
         public MainWindow()
         {
             InitializeComponent();
             currentPosition = Position.DOWN;
             currentState = State.NORMAL;
             currentLoadedPeriod = Period.LAST_WEEK;
+            lastWeekDayInfos = null;
+            lastMonthDayInfos = null;
+            allDaysDayInfos = null;
             setUpTimers();
             SetUpIcon();
             placeProgram();
             SystemEvents.SessionSwitch +=
                 new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
             //SystemEvents.PowerModeChanged += OnSleepMode;
-            loadAllDaysInfo();
+            loadAllDaysInfo(false);
+            loadLastWeekInfo(true);
+            loadLastMonthInfo(false);
             ScreenOn.Content = today.ToHoursString();
             Date.Content = "Today: " + DateTime.Now.Date.ToShortDateString();
             displaySettings();
@@ -86,7 +93,7 @@ namespace Table
 
         private void handleDaySwitch(bool isSwitchedInSleepMode)
         {
-            allDays.Add(today);
+            allDaysDayInfos.Add(today);
             PreviousDays.Items.Add(today.ToFullInfoString());
             Date.Content = "Today: " + DateTime.Now.Date.ToShortDateString();
 
@@ -104,34 +111,103 @@ namespace Table
 
         private void saveDaysInfo()
         {
-            File.WriteAllText("daysInfo.dat", new JavaScriptSerializer().Serialize(allDays));
+            const int WEEK_LENGTH = 7;
+            const int MONTH_LENGTH = 31;
+
+            File.WriteAllText("allDaysInfo.dat", new JavaScriptSerializer().Serialize(allDaysDayInfos));
+            File.WriteAllText("lastWeekInfo.dat", new JavaScriptSerializer().Serialize(
+                lastWeekDayInfos.GetRange(Math.Max(lastWeekDayInfos.Count() - WEEK_LENGTH, 0), WEEK_LENGTH)));
+            File.WriteAllText("lastMonthInfo.dat", new JavaScriptSerializer().Serialize(
+                lastMonthDayInfos.GetRange(Math.Max(lastMonthDayInfos.Count() - MONTH_LENGTH, 0), MONTH_LENGTH)));
         }
 
-        private void loadAllDaysInfo()
+        private void loadAllDaysInfo(bool display)
         {
-            if (File.Exists("daysInfo.dat"))
+            if (!alreadyLoaded(Period.ALL_DAYS))
             {
-                allDays = new JavaScriptSerializer().Deserialize<List<DayInfo>>(File.ReadAllText("daysInfo.dat"));
-                if (allDays[allDays.Count - 1].Date == DateTime.Now.Date.ToShortDateString())
-                {
-                    today = allDays[allDays.Count - 1];
-                    allDays.RemoveAt(allDays.Count - 1);
+                allDaysDayInfos = loadDaysInfo(Period.ALL_DAYS);
+                currentLoadedPeriod = Period.ALL_DAYS;
+                if (display) displayDaysInfos(allDaysDayInfos);
+            }
+        }
 
+        private void loadLastWeekInfo(bool display)
+        {
+            if (!alreadyLoaded(Period.LAST_WEEK))
+            {
+                lastWeekDayInfos = loadDaysInfo(Period.LAST_WEEK);
+                currentLoadedPeriod = Period.LAST_WEEK;
+                if (display) displayDaysInfos(lastWeekDayInfos);
+            }
+        }
+
+        private void loadLastMonthInfo(bool display)
+        {
+            if (!alreadyLoaded(Period.LAST_MONTH))
+            {
+                lastMonthDayInfos = loadDaysInfo(Period.LAST_MONTH);
+                currentLoadedPeriod = Period.LAST_MONTH;
+                if (display) displayDaysInfos(lastMonthDayInfos);
+            }
+        }
+
+        private bool alreadyLoaded(Period period)
+        {
+            Dictionary<Period, List<DayInfo>> periodLists = new Dictionary<Period, List<DayInfo>>() {
+                { Period.LAST_WEEK, lastWeekDayInfos },
+                { Period.LAST_MONTH, lastMonthDayInfos },
+                { Period.ALL_DAYS, allDaysDayInfos }
+            };
+
+            return periodLists[period] != null;
+        }
+
+        private List<DayInfo> loadDaysInfo(Period period)
+        {
+
+            Dictionary<Period, string> fileNames = new Dictionary<Period, string>() {
+                { Period.LAST_WEEK, "lastWeekInfo.dat" },
+                { Period.LAST_MONTH, "lastMonthInfo.dat" },
+                { Period.ALL_DAYS, "allDaysInfo.dat" }
+            };
+
+            /*Dictionary<Period, double> periodLengthInDays = new Dictionary<Period, double>() {
+                { Period.LAST_WEEK, 7 },
+                { Period.LAST_MONTH, 31 },
+                { Period.ALL_DAYS, double.PositiveInfinity}
+            };*/
+
+            List<DayInfo> daysInfos;
+
+            if (File.Exists(fileNames[period]))
+            {
+                daysInfos
+                    = new JavaScriptSerializer().Deserialize<List<DayInfo>>(File.ReadAllText(fileNames[period]));
+                // allDaysDayInfos = new JavaScriptSerializer().Deserialize<List<DayInfo>>(File.ReadAllText("daysInfo.dat"));
+                if (daysInfos[daysInfos.Count - 1].Date == DateTime.Now.Date.ToShortDateString())
+                {
+                    today = daysInfos[daysInfos.Count - 1];
+                    daysInfos.RemoveAt(daysInfos.Count - 1);
                 }
                 else
                 {
                     today = new DayInfo(DateTime.Now.Date.ToShortDateString(), 0);
                 }
-
-                foreach (DayInfo day in allDays)
-                {
-                    PreviousDays.Items.Add(day.ToFullInfoString());
-                }
             }
             else
             {
                 today = new DayInfo(DateTime.Now.Date.ToShortDateString(), 0);
-                allDays = new List<DayInfo>();
+                daysInfos = new List<DayInfo>();
+            }
+
+            return daysInfos;
+        }
+
+        private void displayDaysInfos(List<DayInfo> daysInfos)
+        {
+            foreach (DayInfo day in daysInfos)
+            {
+                PreviousDays.Items.Add(day.ToFullInfoString());
             }
         }
 
@@ -368,7 +444,9 @@ namespace Table
                 notification.Close();
             }
             this.ni.Dispose();
-            allDays.Add(today);
+            allDaysDayInfos.Add(today);
+            lastWeekDayInfos.Add(today);
+            lastMonthDayInfos.Add(today);
             saveDaysInfo();            
 
         }
