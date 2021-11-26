@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace Table
 {
@@ -20,12 +21,22 @@ namespace Table
     public partial class Notification : Window
     {
         private MainWindow mainWindow;
+        private DispatcherTimer closeTimer;
         public Notification(MainWindow mainWindow, string command)
         {
             InitializeComponent();
             this.mainWindow = mainWindow;
             placeNotification();
             NotificationLabel.Content = "Table will go " + command + " in one minute!";
+            SetUpTimers();
+        }
+
+        private void SetUpTimers()
+        {
+            closeTimer = new DispatcherTimer();
+            closeTimer.Interval = new TimeSpan(0, 0, 25);
+            closeTimer.Tick += Accept;
+            closeTimer.Start();
         }
 
         private void placeNotification()
@@ -37,14 +48,21 @@ namespace Table
 
         private void Accept_Button_Click(object sender, RoutedEventArgs e)
         {
-            mainWindow.addActionDone("Accepted");
-            mainWindow.setNotificationNotOpened();
-            this.Close();
+            Accept(sender, e);
         }
 
         private void Decline_Button_Click(object sender, RoutedEventArgs e)
         {
+            closeTimer.Stop();
             mainWindow.addActionDone("Declined");
+            mainWindow.setNotificationNotOpened();
+            this.Close();
+        }
+
+        private void Accept(object sender, EventArgs e)
+        {
+            closeTimer.Stop();
+            mainWindow.addActionDone("Accepted");
             mainWindow.setNotificationNotOpened();
             this.Close();
         }
