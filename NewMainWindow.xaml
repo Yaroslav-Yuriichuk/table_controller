@@ -22,7 +22,7 @@
                     <RowDefinition Height="225"></RowDefinition>
                 </Grid.RowDefinitions>
 
-                <!-- Top menu -->
+                <!-- Top bar -->
                 <Border Width="440" Height="15"
                         CornerRadius="7.5" Background="#C5CAFF"
                         VerticalAlignment="Center">
@@ -83,7 +83,7 @@
                             CornerRadius="15">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="23"></RowDefinition>
+                                <RowDefinition Height="30"></RowDefinition>
                                 <RowDefinition></RowDefinition>
                                 <RowDefinition Height="53"></RowDefinition>
                             </Grid.RowDefinitions>
@@ -92,22 +92,33 @@
                             <TextBlock Text="YOUR DESKS"
                                        FontSize="13" FontWeight="Bold"
                                        HorizontalAlignment="Center"
-                                       VerticalAlignment="Bottom"/>
+                                       VerticalAlignment="Bottom"
+                                       Margin="0 0 0 7"/>
                             <!-- Available desks -->
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden"
                                           >
-                                <Grid>
+                                <Grid x:Name="DesksList">
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="30"></RowDefinition>
                                     </Grid.RowDefinitions>
-                                    
 
+                                    <!--Button VerticalAlignment="Top" Margin="0 3 0 0 ">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Cursor" Value="Hand" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </-->
                                 </Grid>
                             </ScrollViewer>
                             <!-- Refresh button -->
                             <Button Grid.Row="2"
                                     Height="25" Width="140" Content="Refresh"
-                                    FontWeight="DemiBold">
+                                    FontWeight="DemiBold"
+                                    Click="RefreshDesks">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Setter Property="Background" Value="#C5CAFF" />
