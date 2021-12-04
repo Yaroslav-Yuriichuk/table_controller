@@ -39,7 +39,9 @@
                                    HorizontalAlignment="Center" Margin="29 0 0 0">
                         </TextBlock>
                         <!-- Adjust height button -->
-                        <Button Grid.Column="2" Content="Height"
+                        <Button Grid.Column="2"
+                                Click="OpenHeightAdjustWindow"
+                                Content="Height"
                                 FontSize="9" FontWeight="Normal"
                                 Foreground="White"
                                 HorizontalAlignment="Right" Margin="0 0 7 0">
