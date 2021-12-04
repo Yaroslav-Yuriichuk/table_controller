@@ -63,7 +63,6 @@ namespace Table
             Date.Content = "Today: " + DateTime.Now.Date.ToShortDateString();
             displaySettings();
             timeNotificationIntervalStarted = DateTime.Now;
-            sendNotification("UP");
         }
 
         public void addActionDone(string action)

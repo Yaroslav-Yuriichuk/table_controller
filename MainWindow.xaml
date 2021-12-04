@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <Button x:Name="CloseButton" Grid.Row="0" Width="33" HorizontalAlignment="Right" Click="CloseButtonClick" BorderBrush="White" Background="White" Foreground="White">
-            <Image Source="CrossSign.png"/>
+            <Image Source="Assets/CrossSign.png"/>
             <!--Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">
