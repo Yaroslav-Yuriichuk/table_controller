@@ -85,6 +85,12 @@ namespace Table
             Console.WriteLine(((Button)sender).Name);
         }
 
+        private void OpenHeightAdjustWindow(object sender, RoutedEventArgs e)
+        {
+            HeightAdjust heightAdjust = new HeightAdjust();
+            heightAdjust.Show();
+        }
+
         #endregion
     }
 }
