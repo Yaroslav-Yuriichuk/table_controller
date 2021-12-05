@@ -358,7 +358,8 @@
                                            FontSize="12" FontWeight="DemiBold"
                                            VerticalContentAlignment="Center"
                                            Margin="20 0 0 0"/>
-                                        <Label Grid.Column="1" Content="2h 35m"
+                                        <Label x:Name="TodaySitModeLabel"
+                                               Grid.Column="1" Content="2h 35m"
                                                FontSize="12" FontWeight="DemiBold"
                                                VerticalContentAlignment="Center"
                                                HorizontalAlignment="Left"/>
@@ -373,7 +374,8 @@
                                            FontSize="12" FontWeight="DemiBold"
                                            VerticalContentAlignment="Top"
                                            Margin="20 0 0 0"/>
-                                        <Label Grid.Column="1" Content="1h 47m"
+                                        <Label x:Name="TodayStayModeLabel"
+                                               Grid.Column="1" Content="1h 47m"
                                                FontSize="12" FontWeight="DemiBold"
                                                VerticalContentAlignment="Top"
                                                HorizontalAlignment="Left"/>

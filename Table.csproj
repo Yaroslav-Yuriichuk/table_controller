@@ -90,6 +90,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DayModeInfo.cs" />
     <Compile Include="HeightAdjust.xaml.cs">
       <DependentUpon>HeightAdjust.xaml</DependentUpon>
     </Compile>
@@ -98,6 +99,7 @@
     </Compile>
     <Compile Include="Period.cs" />
     <Compile Include="State.cs" />
+    <Compile Include="Util.cs" />
     <Page Include="HeightAdjust.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -190,6 +192,9 @@
     <Resource Include="Assets\ArrowUp.png" />
     <Content Include="Assets\Polygon_Left.svg" />
     <Content Include="Assets\Polygon_Right.svg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ApplicationWindows\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

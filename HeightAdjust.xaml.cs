@@ -22,6 +22,7 @@ namespace Table
         public HeightAdjust()
         {
             InitializeComponent();
+            NewMainWindow.OnClose += CloseWindow;
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -33,6 +34,11 @@ namespace Table
 
         #region
         private void ApplyChanges(object sender, RoutedEventArgs e)
+        {
+            CloseWindow();
+        }
+
+        private void CloseWindow()
         {
             this.Close();
         }
