@@ -28,6 +28,8 @@ namespace Table
         #region CONSTANTS
         private const int MaxTimeUp = 120;
         private const int MaxTimeDown = 120;
+        private const int MinTimeUp = 2;
+        private const int MinTimeDown = 2;
         #endregion
 
         #region EVENTS
@@ -44,6 +46,8 @@ namespace Table
 
         private DayModeInfo today;
         private Position currentPosition;
+        private State currentState;
+        private DateTime timeNotificationIntervalStarted;
 
         #region WINDOW_METHODS
 
@@ -51,11 +55,13 @@ namespace Table
         {
             InitializeComponent();
             currentPosition = Position.DOWN;
+            currentState = State.NORMAL;
             SetUpTimers();
             SetUpIcon();
             today = LoadTodayInfo();
             OnClose += SaveDaysInfo;
             UpdateTimeLabels();
+            UpdateIntervalLabels();
             // PlaceProgram();
         }
 
@@ -127,6 +133,12 @@ namespace Table
             TodayStayModeLabel.Content = Util.MinutesToHoursString(today.MinutesInStayMode);
         }
 
+        private void UpdateIntervalLabels()
+        {
+            SitModeIntervalLabel.Content = Util.MinutesToHoursString(Properties.Settings.Default.UserTimeDown);
+            StayModeIntervalLabel.Content = Util.MinutesToHoursString(Properties.Settings.Default.UserTimeUp);
+        }
+
         #endregion
 
         #region DAYS_INFO
@@ -171,6 +183,15 @@ namespace Table
 
         #endregion
 
+        #region USER_SETTINGS
+
+        private void SaveSettings()
+        {
+            Properties.Settings.Default.Save();
+        }
+
+        #endregion
+
         #region GENERAL_BUTTONS
 
         private void RefreshDesks(object sender, RoutedEventArgs e)
@@ -193,7 +214,115 @@ namespace Table
 
         #region TIMERS_BUTTONS
 
+        private void IncrementTimeUp(object sender, RoutedEventArgs e)
+        {
+            if (Properties.Settings.Default.UserTimeUp < MaxTimeUp)
+            {
+                Properties.Settings.Default.UserTimeUp += 1;
+                SaveSettings();
+                UpdateIntervalLabels();
 
+                if (currentState == State.NORMAL && currentPosition == Position.UP)
+                {
+                    notificationTimer.Stop();
+
+                    double elapsedTimeInMilliseconds = 
+                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
+
+                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeUp - 1) * 60 * 1000
+                        - (int)elapsedTimeInMilliseconds;
+
+                    notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
+                    notificationTimer.Start();
+                }
+            }
+        }
+
+        private void DecrementTimeUp(object sender, RoutedEventArgs e)
+        {
+            if (Properties.Settings.Default.UserTimeUp > MinTimeUp)
+            {
+                Properties.Settings.Default.UserTimeUp -= 1;
+                SaveSettings();
+                UpdateIntervalLabels();
+
+                if (currentState == State.NORMAL && currentPosition == Position.UP)
+                {
+                    notificationTimer.Stop();
+
+                    double elapsedTimeInMilliseconds =
+                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
+
+                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeUp - 1) * 60 * 1000
+                        - (int)elapsedTimeInMilliseconds;
+
+                    if (remainingTimeInMilliseconds > 0)
+                    {
+                        notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
+                        notificationTimer.Start();
+                    }
+                    else
+                    {
+                        NotifyAboutDown(sender, e);
+                    }
+                }
+            }
+        }
+
+        private void IncrementTimeDown(object sender, RoutedEventArgs e)
+        {
+            if (Properties.Settings.Default.UserTimeDown < MaxTimeDown)
+            {
+                Properties.Settings.Default.UserTimeDown += 1;
+                SaveSettings();
+                UpdateIntervalLabels();
+
+                if (currentPosition == Position.DOWN && currentState == State.NORMAL)
+                {
+                    notificationTimer.Stop();
+
+                    double elapsedTimeInMilliseconds =
+                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
+
+                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeDown - 1) * 60 * 1000
+                        - (int)elapsedTimeInMilliseconds;
+
+                    notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
+                    notificationTimer.Start();
+                }
+            }
+        }
+
+        private void DecrementTimeDown(object sender, RoutedEventArgs e)
+        {
+            if (Properties.Settings.Default.UserTimeDown > MinTimeDown)
+            {
+                Properties.Settings.Default.UserTimeDown -= 1;
+                SaveSettings();
+                UpdateIntervalLabels();
+
+                if (currentState == State.NORMAL && currentPosition == Position.DOWN)
+                {
+                    notificationTimer.Stop();
+
+                    double elapsedTimeInMilliseconds =
+                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
+
+                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeDown - 1) * 60 * 1000
+                        - (int)elapsedTimeInMilliseconds;
+
+                    if (remainingTimeInMilliseconds > 0)
+                    {
+                        notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
+                        notificationTimer.Start();
+                    }
+                    else
+                    {
+                        NotifyAboutUp(sender, e);
+                    }
+                }
+            }
+        }
 
         #endregion
 
@@ -247,7 +376,7 @@ namespace Table
             notificationTimer = new DispatcherTimer();
             notificationTimer.Interval = new TimeSpan(0, Properties.Settings.Default.UserTimeDown - 1, 0);
             notificationTimer.Tick += NotifyAboutUp;
-            notificationTimer.Start();
+            StartNotificationTimer();
         }
 
         void SetUpIcon()
@@ -272,6 +401,7 @@ namespace Table
             SendNotification("Table will go Up in 1 minute!");
             notificationTimer.Stop();
             moveTableTimer.Start();
+            currentState = State.WAITING_FOR_ACCEPTANCE;
         }
 
         private void NotifyAboutDown(object sender, EventArgs e)
@@ -279,6 +409,7 @@ namespace Table
             SendNotification("Table will go DOWN in 1 minute!");
             notificationTimer.Stop();
             moveTableTimer.Start();
+            currentState = State.WAITING_FOR_ACCEPTANCE;
         }
 
         private void MoveTable(object sender, EventArgs e)
@@ -288,7 +419,8 @@ namespace Table
             SendNotification("Table moved " + nextPosition.ToString());
             UpdateNotificationTimer(nextPosition);
             currentPosition = nextPosition;
-            notificationTimer.Start();
+            currentState = State.NORMAL;
+            StartNotificationTimer();
         }
 
         private void DayInfoTimerTick(object sender, EventArgs e)
@@ -307,6 +439,12 @@ namespace Table
         #endregion
 
         #region TIMERS_UTIL
+
+        private void StartNotificationTimer()
+        {
+            notificationTimer.Start();
+            timeNotificationIntervalStarted = DateTime.Now;
+        }
 
         // Updates nitification timer when table is about to change position
         private void UpdateNotificationTimer(Position nextPosition)

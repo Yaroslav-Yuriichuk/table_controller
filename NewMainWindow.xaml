@@ -193,7 +193,7 @@
                                             <ColumnDefinition Width="30"></ColumnDefinition>
                                         </Grid.ColumnDefinitions>
 
-                                        <Button HorizontalAlignment="Center">
+                                        <Button Click="DecrementTimeDown">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -212,13 +212,14 @@
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
-                                        <Label Grid.Column="1"
+                                        <Label x:Name="SitModeIntervalLabel"
+                                               Grid.Column="1"
                                                FontSize="12" HorizontalContentAlignment="Center"
                                                VerticalContentAlignment="Center"
                                                Foreground="White">
-                                            45m
                                         </Label>
-                                        <Button Grid.Column="2">
+                                        <Button Grid.Column="2"
+                                                Click="IncrementTimeDown">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -275,7 +276,7 @@
                                             <ColumnDefinition Width="30"></ColumnDefinition>
                                         </Grid.ColumnDefinitions>
 
-                                        <Button HorizontalAlignment="Center">
+                                        <Button Click="DecrementTimeUp">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -294,13 +295,14 @@
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
-                                        <Label Grid.Column="1"
+                                        <Label x:Name="StayModeIntervalLabel"
+                                               Grid.Column="1"
                                                FontSize="12" HorizontalContentAlignment="Center"
                                                VerticalContentAlignment="Center"
                                                Foreground="White">
-                                            1h 35m
                                         </Label>
-                                        <Button Grid.Column="2">
+                                        <Button Grid.Column="2"
+                                                Click="IncrementTimeUp">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>

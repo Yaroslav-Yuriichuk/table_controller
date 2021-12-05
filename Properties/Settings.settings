@@ -9,22 +9,22 @@
       <Value Profile="(Default)">2</Value>
     </Setting>
     <Setting Name="minTimeDown" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
+      <Value Profile="(Default)">2</Value>
     </Setting>
     <Setting Name="minTimeUp" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1</Value>
+      <Value Profile="(Default)">2</Value>
     </Setting>
     <Setting Name="maxTimeDown" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">110</Value>
+      <Value Profile="(Default)">120</Value>
     </Setting>
     <Setting Name="maxTimeUp" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">110</Value>
+      <Value Profile="(Default)">120</Value>
     </Setting>
     <Setting Name="UserTimeDown" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">2</Value>
     </Setting>
     <Setting Name="UserTimeUp" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">2</Value>
+      <Value Profile="(Default)">40</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -49,7 +49,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
         public int minTimeDown {
             get {
                 return ((int)(this["minTimeDown"]));
@@ -61,7 +61,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
         public int minTimeUp {
             get {
                 return ((int)(this["minTimeUp"]));
@@ -73,7 +73,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("110")]
+        [global::System.Configuration.DefaultSettingValueAttribute("120")]
         public int maxTimeDown {
             get {
                 return ((int)(this["maxTimeDown"]));
@@ -85,7 +85,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("110")]
+        [global::System.Configuration.DefaultSettingValueAttribute("120")]
         public int maxTimeUp {
             get {
                 return ((int)(this["maxTimeUp"]));
@@ -109,7 +109,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        [global::System.Configuration.DefaultSettingValueAttribute("40")]
         public int UserTimeUp {
             get {
                 return ((int)(this["UserTimeUp"]));
