@@ -193,7 +193,7 @@
                                             <ColumnDefinition Width="30"></ColumnDefinition>
                                         </Grid.ColumnDefinitions>
 
-                                        <Button HorizontalAlignment="Center">
+                                        <Button Click="DecrementTimeDown">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -208,17 +208,18 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Left.png" />
+                                                    <Image Source="Assets/TriangleLeft.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
-                                        <Label Grid.Column="1"
+                                        <Label x:Name="SitModeIntervalLabel"
+                                               Grid.Column="1"
                                                FontSize="12" HorizontalContentAlignment="Center"
                                                VerticalContentAlignment="Center"
                                                Foreground="White">
-                                            45m
                                         </Label>
-                                        <Button Grid.Column="2">
+                                        <Button Grid.Column="2"
+                                                Click="IncrementTimeDown">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -233,14 +234,14 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Right.png" />
+                                                    <Image Source="Assets/TriangleRight.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
                                     </Grid>
                                 </Border>
                                 <!-- Arrow up -->
-                                <Image Grid.Column="2" Source="Assets/ArrowUp.png"
+                                <Image Grid.Column="2" Source="Assets/UpArrow.png"
                                        Width="30" Height="30"
                                        Margin="0 0 10 0"
                                        VerticalAlignment="Center"/>
@@ -275,7 +276,7 @@
                                             <ColumnDefinition Width="30"></ColumnDefinition>
                                         </Grid.ColumnDefinitions>
 
-                                        <Button HorizontalAlignment="Center">
+                                        <Button Click="DecrementTimeUp">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -290,17 +291,18 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Left.png" />
+                                                    <Image Source="Assets/TriangleLeft.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
-                                        <Label Grid.Column="1"
+                                        <Label x:Name="StayModeIntervalLabel"
+                                               Grid.Column="1"
                                                FontSize="12" HorizontalContentAlignment="Center"
                                                VerticalContentAlignment="Center"
                                                Foreground="White">
-                                            1h 35m
                                         </Label>
-                                        <Button Grid.Column="2">
+                                        <Button Grid.Column="2"
+                                                Click="IncrementTimeUp">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Background" Value="Transparent"/>
@@ -315,14 +317,14 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Right.png" />
+                                                    <Image Source="Assets/TriangleRight.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
                                     </Grid>
                                 </Border>
                                 <!-- Arrow up -->
-                                <Image Grid.Column="2" Source="Assets/ArrowDown.png"
+                                <Image Grid.Column="2" Source="Assets/DownArrow.png"
                                        Width="30" Height="30"
                                        Margin="0 0 10 0"
                                        VerticalAlignment="Center"/>
@@ -358,7 +360,8 @@
                                            FontSize="12" FontWeight="DemiBold"
                                            VerticalContentAlignment="Center"
                                            Margin="20 0 0 0"/>
-                                        <Label Grid.Column="1" Content="2h 35m"
+                                        <Label x:Name="TodaySitModeLabel"
+                                               Grid.Column="1" Content="2h 35m"
                                                FontSize="12" FontWeight="DemiBold"
                                                VerticalContentAlignment="Center"
                                                HorizontalAlignment="Left"/>
@@ -373,7 +376,8 @@
                                            FontSize="12" FontWeight="DemiBold"
                                            VerticalContentAlignment="Top"
                                            Margin="20 0 0 0"/>
-                                        <Label Grid.Column="1" Content="1h 47m"
+                                        <Label x:Name="TodayStayModeLabel"
+                                               Grid.Column="1" Content="1h 47m"
                                                FontSize="12" FontWeight="DemiBold"
                                                VerticalContentAlignment="Top"
                                                HorizontalAlignment="Left"/>

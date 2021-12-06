@@ -10,6 +10,6 @@ namespace Table
     {
         SNOOZED, // snoozed from notification
         WAITING_FOR_ACCEPTANCE, // notification sent, waiting for decision
-        NORMAL // being in certain state
+        NORMAL // normal state, not notified yet
     }
 }

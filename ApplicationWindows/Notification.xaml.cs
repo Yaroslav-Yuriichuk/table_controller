@@ -20,15 +20,16 @@ namespace Table
     /// </summary>
     public partial class Notification : Window
     {
-        private MainWindow mainWindow;
+        private Window mainWindow;
         private DispatcherTimer closeTimer;
-        public Notification(MainWindow mainWindow, string command)
+        public Notification(Window mainWindow, string message)
         {
             InitializeComponent();
             this.mainWindow = mainWindow;
             placeNotification();
-            NotificationLabel.Content = "Table will go " + command + " in one minute!";
+            NotificationLabel.Content = message;
             SetUpTimers();
+            NewMainWindow.OnClose += CloseWindow;
         }
 
         private void SetUpTimers()
@@ -54,16 +55,21 @@ namespace Table
         private void Decline_Button_Click(object sender, RoutedEventArgs e)
         {
             closeTimer.Stop();
-            mainWindow.addActionDone("Declined");
-            mainWindow.setNotificationNotOpened();
-            this.Close();
+            /*mainWindow.addActionDone("Declined");
+            mainWindow.setNotificationNotOpened();*/
+            CloseWindow();
         }
 
         private void Accept(object sender, EventArgs e)
         {
             closeTimer.Stop();
-            mainWindow.addActionDone("Accepted");
-            mainWindow.setNotificationNotOpened();
+            /*mainWindow.addActionDone("Accepted");
+            mainWindow.setNotificationNotOpened();*/
+            CloseWindow();
+        }
+
+        private void CloseWindow()
+        {
             this.Close();
         }
     }

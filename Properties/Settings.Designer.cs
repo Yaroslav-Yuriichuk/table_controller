@@ -25,7 +25,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("40")]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
         public int timeDown {
             get {
                 return ((int)(this["timeDown"]));
@@ -37,7 +37,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("40")]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
         public int timeUp {
             get {
                 return ((int)(this["timeUp"]));
@@ -49,7 +49,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
         public int minTimeDown {
             get {
                 return ((int)(this["minTimeDown"]));
@@ -61,7 +61,7 @@ namespace Table.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
         public int minTimeUp {
             get {
                 return ((int)(this["minTimeUp"]));
@@ -92,6 +92,30 @@ namespace Table.Properties {
             }
             set {
                 this["maxTimeUp"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        public int UserTimeDown {
+            get {
+                return ((int)(this["UserTimeDown"]));
+            }
+            set {
+                this["UserTimeDown"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("40")]
+        public int UserTimeUp {
+            get {
+                return ((int)(this["UserTimeUp"]));
+            }
+            set {
+                this["UserTimeUp"] = value;
             }
         }
     }
