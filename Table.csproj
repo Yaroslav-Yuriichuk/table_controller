@@ -91,16 +91,18 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="DayModeInfo.cs" />
-    <Compile Include="HeightAdjust.xaml.cs">
+    <Compile Include="ApplicationWindows\HeightAdjust.xaml.cs">
       <DependentUpon>HeightAdjust.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Desk.cs" />
+    <Compile Include="Enums\DeskConnectionState.cs" />
     <Compile Include="NewMainWindow.xaml.cs">
       <DependentUpon>NewMainWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Period.cs" />
-    <Compile Include="State.cs" />
+    <Compile Include="Enums\Period.cs" />
+    <Compile Include="Enums\State.cs" />
     <Compile Include="Util.cs" />
-    <Page Include="HeightAdjust.xaml">
+    <Page Include="ApplicationWindows\HeightAdjust.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -121,16 +123,16 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Notification.xaml">
+    <Page Include="ApplicationWindows\Notification.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Notification.xaml.cs">
+    <Compile Include="ApplicationWindows\Notification.xaml.cs">
       <DependentUpon>Notification.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Position.cs" />
+    <Compile Include="Enums\Position.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -184,17 +186,11 @@
     <Resource Include="Table.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Assets\Polygon_Left.png" />
-    <Resource Include="Assets\Polygon_Right.png" />
+    <Resource Include="Assets\DownArrow.png" />
+    <Resource Include="Assets\TriangleLeft.png" />
+    <Resource Include="Assets\TriangleRight.png" />
+    <Resource Include="Assets\UpArrow.png" />
   </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Assets\ArrowDown.png" />
-    <Resource Include="Assets\ArrowUp.png" />
-    <Content Include="Assets\Polygon_Left.svg" />
-    <Content Include="Assets\Polygon_Right.svg" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ApplicationWindows\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

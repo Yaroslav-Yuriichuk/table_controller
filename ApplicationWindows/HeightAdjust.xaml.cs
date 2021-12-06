@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,10 +20,18 @@ namespace Table
     /// </summary>
     public partial class HeightAdjust : Window
     {
+        public static Action OnClose;
         public HeightAdjust()
         {
             InitializeComponent();
             NewMainWindow.OnClose += CloseWindow;
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            NewMainWindow.OnClose -= CloseWindow;
+            OnClose?.Invoke();
+            base.OnClosing(e);
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)

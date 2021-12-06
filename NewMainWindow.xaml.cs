@@ -17,6 +17,8 @@ using System.Windows.Forms;
 using System.ComponentModel;
 using System.IO;
 using System.Web.Script.Serialization;
+using Table;
+using Table.Enums;
 
 namespace Table
 {
@@ -38,6 +40,8 @@ namespace Table
 
         #endregion
 
+        private bool isHeightAdjustWindowOpened = false;
+
         private DispatcherTimer notificationTimer;
         private DispatcherTimer moveTableTimer;
         private DispatcherTimer dayInfoTimer;
@@ -48,6 +52,9 @@ namespace Table
         private Position currentPosition;
         private State currentState;
         private DateTime timeNotificationIntervalStarted;
+
+        private List<Desk> foundDesks;
+        private Desk connectedDesk;
 
         #region WINDOW_METHODS
 
@@ -60,8 +67,10 @@ namespace Table
             SetUpIcon();
             today = LoadTodayInfo();
             OnClose += SaveDaysInfo;
+            HeightAdjust.OnClose += SetHeightAdjustNotOpened;
             UpdateTimeLabels();
             UpdateIntervalLabels();
+            foundDesks = new List<Desk>();
             // PlaceProgram();
         }
 
@@ -75,17 +84,18 @@ namespace Table
         protected override void OnClosing(CancelEventArgs e)
         {
             OnClose?.Invoke();
+            HeightAdjust.OnClose -= SetHeightAdjustNotOpened;
             base.OnClosing(e);
         }
 
         #endregion
 
         #region XAML
-        private System.Windows.Controls.Button CreateDeskTemplate(string name)
+        private System.Windows.Controls.Button CreateDeskTemplate(string xName,string name)
         {
             System.Windows.Controls.Button desk = new System.Windows.Controls.Button();
 
-            desk.Name = $"{name}";
+            desk.Name = xName;
             desk.MouseDoubleClick += Connect;
             desk.VerticalAlignment = VerticalAlignment.Top;
             desk.Margin = new Thickness(0, 3, 0, 0);
@@ -117,7 +127,10 @@ namespace Table
         private void AddDeskToList()
         {
             DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
-            DesksList.Children.Add(CreateDeskTemplate($"DESK_{DesksList.Children.Count}"));
+            System.Windows.Controls.Button newDesk = CreateDeskTemplate($"desk{DesksList.Children.Count}",
+                $"DESK_{DesksList.Children.Count}");
+            foundDesks.Add(new Desk(newDesk, DeskConnectionState.NOT_CONNECTED));
+            DesksList.Children.Add(newDesk);
         }
 
         private void PlaceProgram()
@@ -206,8 +219,12 @@ namespace Table
 
         private void OpenHeightAdjustWindow(object sender, RoutedEventArgs e)
         {
-            HeightAdjust heightAdjust = new HeightAdjust();
-            heightAdjust.Show();
+            if (!isHeightAdjustWindowOpened)
+            {
+                isHeightAdjustWindowOpened = true;
+                HeightAdjust heightAdjust = new HeightAdjust();
+                heightAdjust.Show();
+            }
         }
 
         #endregion
@@ -479,6 +496,15 @@ namespace Table
         private void SendNotification(string command)
         {
             new Notification(this, command).Show();
+        }
+
+        #endregion
+
+        #region HELPER_FUNCTIONS
+
+        private void SetHeightAdjustNotOpened()
+        {
+            isHeightAdjustWindowOpened = false;
         }
 
         #endregion

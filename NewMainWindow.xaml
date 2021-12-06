@@ -208,7 +208,7 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Left.png" />
+                                                    <Image Source="Assets/TriangleLeft.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
@@ -234,14 +234,14 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Right.png" />
+                                                    <Image Source="Assets/TriangleRight.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
                                     </Grid>
                                 </Border>
                                 <!-- Arrow up -->
-                                <Image Grid.Column="2" Source="Assets/ArrowUp.png"
+                                <Image Grid.Column="2" Source="Assets/UpArrow.png"
                                        Width="30" Height="30"
                                        Margin="0 0 10 0"
                                        VerticalAlignment="Center"/>
@@ -291,7 +291,7 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Left.png" />
+                                                    <Image Source="Assets/TriangleLeft.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
@@ -317,14 +317,14 @@
                                             </Button.Style>
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Image Source="Assets/Polygon_Right.png" />
+                                                    <Image Source="Assets/TriangleRight.png" />
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
                                     </Grid>
                                 </Border>
                                 <!-- Arrow up -->
-                                <Image Grid.Column="2" Source="Assets/ArrowDown.png"
+                                <Image Grid.Column="2" Source="Assets/DownArrow.png"
                                        Width="30" Height="30"
                                        Margin="0 0 10 0"
                                        VerticalAlignment="Center"/>
