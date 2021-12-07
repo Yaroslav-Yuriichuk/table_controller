@@ -127,6 +127,7 @@
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter Property="Cursor" Value="Hand" />
+                                                <Setter Property="Background" Value="#C2C7FC" />
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -241,10 +242,26 @@
                                     </Grid>
                                 </Border>
                                 <!-- Arrow up -->
-                                <Image Grid.Column="2" Source="Assets/UpArrow.png"
-                                       Width="30" Height="30"
-                                       Margin="0 0 10 0"
-                                       VerticalAlignment="Center"/>
+                                <Button Grid.Column="2"
+                                        Click="ToggleMovingTableUp">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Cursor" Value="Hand" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Image Grid.Column="2" Source="Assets/UpArrow.png"
+                                                   Width="30" Height="30"
+                                                   Margin="0 0 10 0"
+                                                   VerticalAlignment="Center"/>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                             </Grid>
                             <!-- Stay mode timers -->
                             <Grid Grid.Row="2">
@@ -324,10 +341,26 @@
                                     </Grid>
                                 </Border>
                                 <!-- Arrow up -->
-                                <Image Grid.Column="2" Source="Assets/DownArrow.png"
-                                       Width="30" Height="30"
-                                       Margin="0 0 10 0"
-                                       VerticalAlignment="Center"/>
+                                <Button Grid.Column="2"
+                                        Click="ToggleMovingTableDown">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Cursor" Value="Hand" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Image Grid.Column="2" Source="Assets/DownArrow.png"
+                                                   Width="30" Height="30"
+                                                   Margin="0 0 10 0"
+                                                   VerticalAlignment="Center"/>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                             </Grid>
                             <!-- History -->
                             <Border Grid.Row="3" Background="#C5CAFF"
