@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,6 +20,10 @@ using System.IO;
 using System.Web.Script.Serialization;
 using Table;
 using Table.Enums;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using Windows.Devices.Enumeration;
+using Windows.Devices.Bluetooth;
+using Windows.Storage.Streams;
 
 namespace Table
 {
@@ -28,10 +33,16 @@ namespace Table
     public partial class NewMainWindow : Window
     {
         #region CONSTANTS
+
         private const int MaxTimeUp = 120;
         private const int MaxTimeDown = 120;
         private const int MinTimeUp = 2;
         private const int MinTimeDown = 2;
+
+        private const string DESK_HEIGHT_CHARACTERISTIC = "ff01";
+        private byte[] MOVE_TABLE_UP_COMMAND = { 0xF1, 0xF1, 0x01, 0x00, 0x01, 0x7E };
+        private byte[] MOVE_TABLE_DOWN_COMMAND = { 0xF1, 0xF1, 0x02, 0x00, 0x02, 0x7E };
+
         #endregion
 
         #region EVENTS
@@ -56,6 +67,17 @@ namespace Table
         private List<Desk> foundDesks;
         private Desk connectedDesk;
 
+        #region BLUETOOTH_FIELDS
+
+        private DeviceWatcher deviceWatcher;
+        private GattCharacteristic heightCharacteristic;
+        private DispatcherTimer moveDeskUpTimer;
+        private DispatcherTimer moveDeskDownTimer;
+        private bool isDeskMovingUp = false;
+        private bool isDeskMovingDown = false;
+
+        #endregion
+
         #region WINDOW_METHODS
 
         public NewMainWindow()
@@ -71,7 +93,15 @@ namespace Table
             UpdateTimeLabels();
             UpdateIntervalLabels();
             foundDesks = new List<Desk>();
-            // PlaceProgram();
+            /*new Thread(() =>
+            {
+                Thread.CurrentThread.IsBackground = true;
+                //Console.WriteLine("cvbdjks");
+                StartScanningForDevices();
+            }).Start();*/
+            heightCharacteristic = null;
+            StartScanningForDevices();
+            PlaceProgram();
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -85,17 +115,18 @@ namespace Table
         {
             OnClose?.Invoke();
             HeightAdjust.OnClose -= SetHeightAdjustNotOpened;
+            deviceWatcher.Stop();
             base.OnClosing(e);
         }
 
         #endregion
 
         #region XAML
-        private System.Windows.Controls.Button CreateDeskTemplate(string xName,string name)
+        private System.Windows.Controls.Button CreateDeskTemplate(string deskXName, string deskName)
         {
             System.Windows.Controls.Button desk = new System.Windows.Controls.Button();
 
-            desk.Name = xName;
+            desk.Name = deskXName;
             desk.MouseDoubleClick += Connect;
             desk.VerticalAlignment = VerticalAlignment.Top;
             desk.Margin = new Thickness(0, 3, 0, 0);
@@ -109,8 +140,8 @@ namespace Table
                                                     "<ColumnDefinition></ColumnDefinition>" +
                                                     "<ColumnDefinition Width = \"25\"></ColumnDefinition>" +
                                                 "</Grid.ColumnDefinitions>" +
-                                               $"<Label Content = \"{name}\" FontSize = \"14\" FontWeight = \"DemiBold\" VerticalAlignment = \"Top\" Margin = \"10 0 0 0\" />" +
-                                                "<Border Grid.Column = \"1\" Height = \"15\" Width = \"15\" Background = \"#23DA36\" CornerRadius = \"7.5\" />" + 
+                                               $"<Label Content = \"{deskName}\" FontSize = \"14\" FontWeight = \"DemiBold\" VerticalAlignment = \"Top\" Margin = \"10 0 0 0\" />" +
+                                               $"<Border Name=\"{deskXName}status\" Grid.Column = \"1\" Height = \"15\" Width = \"15\" Background = \"#D58186\" CornerRadius = \"7.5\" />" + 
                                             "</Grid>" +
                                     "</Border>" +
                               "</ControlTemplate> ";
@@ -124,13 +155,13 @@ namespace Table
             return desk;
         }
 
-        private void AddDeskToList()
+        private void AddDeskToList(DeviceInformation device)
         {
             DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
-            System.Windows.Controls.Button newDesk = CreateDeskTemplate($"desk{DesksList.Children.Count}",
-                $"DESK_{DesksList.Children.Count}");
-            foundDesks.Add(new Desk(newDesk, DeskConnectionState.NOT_CONNECTED));
-            DesksList.Children.Add(newDesk);
+            System.Windows.Controls.Button newDeskUI = CreateDeskTemplate($"desk{DesksList.Children.Count}",
+                device.Name);
+            foundDesks.Add(new Desk(newDeskUI, device, DeskConnectionState.NOT_CONNECTED));
+            DesksList.Children.Add(newDeskUI);
         }
 
         private void PlaceProgram()
@@ -150,6 +181,16 @@ namespace Table
         {
             SitModeIntervalLabel.Content = Util.MinutesToHoursString(Properties.Settings.Default.UserTimeDown);
             StayModeIntervalLabel.Content = Util.MinutesToHoursString(Properties.Settings.Default.UserTimeUp);
+        }
+
+        private void UpdateConnectionStateToConnected(Desk desk)
+        {
+            /*Console.WriteLine($"Connected to {desk.Device.Id}");
+            //Label statusLabel = desk.DeskUI.FindName(desk.DeskUI.Name);
+            Border status = (System.Windows.Controls.Border)Template.FindName($"{desk.DeskUI.Name}status",
+                desk.DeskUI);
+            //Console.WriteLine(((System.Windows.Controls.Border)desk.DeskUI.FindName($"{desk.DeskUI.Name}status")).Name);
+            Console.WriteLine(status == null);*/
         }
 
         #endregion
@@ -209,12 +250,16 @@ namespace Table
 
         private void RefreshDesks(object sender, RoutedEventArgs e)
         {
-            AddDeskToList();
+            //AddDeskToList();
         }
 
         private void Connect(object sender, RoutedEventArgs e)
         {
             Console.WriteLine(((System.Windows.Controls.Button)sender).Name);
+            ConnectDevice(foundDesks.Find(desk =>
+            {
+                return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
+            }).Device);
         }
 
         private void OpenHeightAdjustWindow(object sender, RoutedEventArgs e)
@@ -386,6 +431,14 @@ namespace Table
             dayInfoTimer.Tick += DayInfoTimerTick;
             dayInfoTimer.Start();
 
+            moveDeskUpTimer = new DispatcherTimer();
+            moveDeskUpTimer.Interval = new TimeSpan(0, 0, 0, 0, 200);
+            moveDeskUpTimer.Tick += SendCommandToMoveUp;
+            
+            moveDeskDownTimer = new DispatcherTimer();
+            moveDeskDownTimer.Interval = new TimeSpan(0, 0, 0, 0, 200);
+            moveDeskDownTimer.Tick += SendCommandToMoveDown;
+
             moveTableTimer = new DispatcherTimer();
             moveTableTimer.Interval = new TimeSpan(0, 1, 0);
             moveTableTimer.Tick += MoveTable;
@@ -453,6 +506,34 @@ namespace Table
             UpdateTimeLabels();
         }
 
+        private async void SendCommandToMoveUp(object sender, EventArgs e)
+        {
+            var writer = new DataWriter();
+            writer.WriteBytes(MOVE_TABLE_UP_COMMAND);
+
+            GattCommunicationStatus result = await heightCharacteristic.WriteValueAsync(writer.DetachBuffer());
+            if (result != GattCommunicationStatus.Success)
+            {
+                Console.WriteLine("Failed to move up");
+                isDeskMovingUp = false;
+                moveDeskUpTimer.Stop();
+            }
+        }
+
+        private async void SendCommandToMoveDown(object sender, EventArgs e)
+        {
+            var writer = new DataWriter();
+            writer.WriteBytes(MOVE_TABLE_DOWN_COMMAND);
+
+            GattCommunicationStatus result = await heightCharacteristic.WriteValueAsync(writer.DetachBuffer());
+            if (result != GattCommunicationStatus.Success)
+            {
+                Console.WriteLine("Failed to move down");
+                isDeskMovingDown = false;
+                moveDeskDownTimer.Stop();
+            }
+        }
+
         #endregion
 
         #region TIMERS_UTIL
@@ -510,6 +591,153 @@ namespace Table
         #endregion
 
         #region BLUETOOTH
+
+        private void StartScanningForDevices()
+        {
+            string[] requestedProperties = { "System.Devices.Aep.DeviceAddress", "System.Devices.Aep.IsConnected" };
+
+            deviceWatcher =
+                        DeviceInformation.CreateWatcher(
+                                Windows.Devices.Bluetooth.BluetoothLEDevice.GetDeviceSelectorFromPairingState(false),
+                                requestedProperties,
+                                DeviceInformationKind.AssociationEndpoint);
+
+            // Register event handlers before starting the watcher.
+            // Added, Updated and Removed are required to get all nearby devices
+            deviceWatcher.Added += DeviceWatcher_Added;
+            deviceWatcher.Updated += DeviceWatcher_Updated;
+            deviceWatcher.Removed += DeviceWatcher_Removed;
+
+            // EnumerationCompleted and Stopped are optional to implement.
+            deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
+            deviceWatcher.Stopped += DeviceWatcher_Stopped;
+
+            // Start the watcher.
+            deviceWatcher.Start();
+        }
+
+        private async void ConnectDevice(DeviceInformation deviceInfo)
+        {
+            // Note: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
+            BluetoothLEDevice bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(deviceInfo.Id);
+            // ...
+            Console.WriteLine(deviceInfo.Name);
+
+            GattDeviceServicesResult serviceResult = await bluetoothLeDevice.GetGattServicesAsync();
+
+            if (serviceResult.Status == GattCommunicationStatus.Success)
+            {
+                var services = serviceResult.Services;
+                foreach (var service in services)
+                {
+                    GattCharacteristicsResult charachterisicResult = await service.GetCharacteristicsAsync();
+
+                    if (charachterisicResult.Status == GattCommunicationStatus.Success)
+                    {
+                        var characteristics = charachterisicResult.Characteristics;
+                        foreach (var characteristic in characteristics)
+                        {
+                            GattCharacteristicProperties properties = characteristic.CharacteristicProperties;
+
+                            if (properties.HasFlag(GattCharacteristicProperties.WriteWithoutResponse)
+                                && characteristic.Uuid.ToString("N").Substring(4, 4) == DESK_HEIGHT_CHARACTERISTIC)
+                            {
+                                heightCharacteristic = characteristic;
+                                Console.WriteLine(characteristic.Uuid);
+
+                                UpdateConnectionStateToConnected(foundDesks.Find(desk => {
+                                    return desk.Device == deviceInfo;
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Looser");
+            }
+        }
+
+        private void ToggleMovingTableUp(object sender, RoutedEventArgs e)
+        {
+            if (heightCharacteristic != null)
+            {
+                if (isDeskMovingUp)
+                {
+                    moveDeskUpTimer.Stop();
+                    isDeskMovingUp = false;
+                }
+                else if (isDeskMovingDown)
+                {
+                    moveDeskDownTimer.Stop();
+                    moveDeskUpTimer.Start();
+                    isDeskMovingDown = false;
+                    isDeskMovingUp = true;
+                }
+                else
+                {
+                    moveDeskUpTimer.Start();
+                    isDeskMovingUp = true;
+                }
+            }
+        }
+
+        private void ToggleMovingTableDown(object sender, RoutedEventArgs e)
+        {
+            if (heightCharacteristic != null)
+            {
+                if (isDeskMovingDown)
+                {
+                    moveDeskDownTimer.Stop();
+                    isDeskMovingDown = false;
+                }
+                else if (isDeskMovingUp)
+                {
+                    moveDeskUpTimer.Stop();
+                    moveDeskDownTimer.Start();
+                    isDeskMovingUp = false;
+                    isDeskMovingDown = true;
+                }
+                else
+                {
+                    moveDeskDownTimer.Start();
+                    isDeskMovingDown = true;
+                }
+            }
+        }
+
+        private void DeviceWatcher_Stopped(DeviceWatcher sender, object args)
+        {
+            
+        }
+
+        private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
+        {
+            
+        }
+
+        private void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            
+        }
+
+        private void DeviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)
+        {
+            
+        }
+
+        private void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
+        {
+            if (args.Name != string.Empty)
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    AddDeskToList(args);
+                });
+                Console.WriteLine(args.Name);
+            }
+        }
 
         #endregion
     }
