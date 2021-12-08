@@ -24,6 +24,7 @@ using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Bluetooth;
 using Windows.Storage.Streams;
+using Stacker.ApplicationWindows;
 
 namespace Stacker
 {
@@ -86,6 +87,7 @@ namespace Stacker
         public NewMainWindow()
         {
             InitializeComponent();
+            this.WindowState = WindowState.Normal;
             currentPosition = Position.DOWN;
             currentState = State.NORMAL;
             SetUpTimers();
@@ -577,7 +579,7 @@ namespace Stacker
         {
             moveTableTimer.Stop();
             Position nextPosition = GetOppositePositionToCurrent();
-            SendNotification("Table moved " + nextPosition.ToString());
+            //SendNotification("Table moved " + nextPosition.ToString());
             UpdateNotificationTimer(nextPosition);
             currentPosition = nextPosition;
             currentState = State.NORMAL;
@@ -665,9 +667,9 @@ namespace Stacker
 
         #region NOTIFICATION
 
-        private void SendNotification(string command)
+        private void SendNotification(string message)
         {
-            new Notification(this, command).Show();
+            new NewNotification(message, this.WindowState == WindowState.Normal).Show();
         }
 
         #endregion
