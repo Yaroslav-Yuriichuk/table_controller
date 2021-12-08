@@ -122,7 +122,7 @@ namespace Table
         #endregion
 
         #region XAML
-        private System.Windows.Controls.Button CreateDeskTemplate(string deskXName, string deskName)
+        /*private System.Windows.Controls.Button CreateDeskTemplate(string deskXName, string deskName)
         {
             System.Windows.Controls.Button desk = new System.Windows.Controls.Button();
 
@@ -153,16 +153,110 @@ namespace Table
             Grid.SetRow(desk, DesksList.Children.Count);
 
             return desk;
+        }*/
+        
+        #region DESK_XAML_PART
+
+        private Border CreateStatusBorder()
+        {
+            Border status = new Border();
+
+            status.Height = 15;
+            status.Width = 15;
+            status.CornerRadius = new CornerRadius(7.5);
+            status.Background = (SolidColorBrush)new BrushConverter().ConvertFromString("#D58186");
+            Grid.SetColumn(status, 1);
+
+            return status;
+        }
+
+        private System.Windows.Controls.Label CreateNameLabel(string deskName)
+        {
+            System.Windows.Controls.Label label = new System.Windows.Controls.Label();
+
+            label.Content = deskName;
+            label.FontSize = 14;
+            label.FontWeight = FontWeights.DemiBold;
+            label.Margin = new Thickness(10, 0, 0, 0);
+
+            return label;
+        }
+
+        private Tuple<Grid, Border> CreateDeskGrid(string deskName)
+        {
+            Grid grid = new Grid();
+
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(25) });
+
+            Border status = CreateStatusBorder();
+
+            grid.Children.Add(CreateNameLabel(deskName));
+            grid.Children.Add(status);
+
+            return new Tuple<Grid, Border> (grid, status);
+        }
+
+        private Tuple<Border, Border> CreateDeskBorder(string deskName)
+        {
+            Border border = new Border();
+
+            border.Width = 160;
+            border.Height = 30;
+            border.CornerRadius = new CornerRadius(15);
+            border.Background = (SolidColorBrush)new BrushConverter().ConvertFromString("#556B80");
+
+            Tuple<Grid, Border> values = CreateDeskGrid(deskName);
+            border.Child = values.Item1;
+
+            return new Tuple<Border, Border> (border, values.Item2);
+        }
+
+        #endregion
+
+
+        private Tuple<System.Windows.Controls.Button, Border> CreateDeskTemplate(string deskXName, string deskName)
+        {
+            System.Windows.Controls.Button button = new System.Windows.Controls.Button();
+            Style style = System.Windows.Application.Current.FindResource("DeskButtonStyle") as Style;
+
+            button.Name = deskXName;
+            button.Width = 160;
+            button.Height = 30;
+            button.Background = Brushes.Transparent;
+            button.MouseDoubleClick += Connect;
+
+            Tuple<Border, Border> values = CreateDeskBorder(deskName);
+            button.Content = values.Item1;
+            button.Style = style;
+
+            string template = "<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType=\"Button\">" +
+                                    "<ContentPresenter VerticalAlignment=\"Center\" HorizontalAlignment=\"Center\" /> " + 
+                               "</ControlTemplate>";
+            button.Template = (ControlTemplate)XamlReader.Parse(template);
+
+            Grid.SetRow(button, DesksList.Children.Count);
+
+            return new Tuple<System.Windows.Controls.Button, Border>(button, values.Item2);
         }
 
         private void AddDeskToList(DeviceInformation device)
         {
             DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
-            System.Windows.Controls.Button newDeskUI = CreateDeskTemplate($"desk{DesksList.Children.Count}",
+            Tuple<System.Windows.Controls.Button, Border> newDeskUI = CreateDeskTemplate($"desk{DesksList.Children.Count}",
                 device.Name);
-            foundDesks.Add(new Desk(newDeskUI, device, DeskConnectionState.NOT_CONNECTED));
-            DesksList.Children.Add(newDeskUI);
+            foundDesks.Add(new Desk(newDeskUI.Item1, newDeskUI.Item2, device, DeskConnectionState.NOT_CONNECTED));
+            DesksList.Children.Add(newDeskUI.Item1);
         }
+
+        /*private void AddDeskToList(string name)
+        {
+            DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
+            Tuple<System.Windows.Controls.Button, Border> newDeskUI = CreateDeskTemplate($"desk{DesksList.Children.Count}",
+                name);
+            foundDesks.Add(new Desk(newDeskUI.Item1, newDeskUI.Item2, device, DeskConnectionState.NOT_CONNECTED));
+            DesksList.Children.Add(newDeskUI.Item1);
+        }*/
 
         private void PlaceProgram()
         {
@@ -185,12 +279,7 @@ namespace Table
 
         private void UpdateConnectionStateToConnected(Desk desk)
         {
-            /*Console.WriteLine($"Connected to {desk.Device.Id}");
-            //Label statusLabel = desk.DeskUI.FindName(desk.DeskUI.Name);
-            Border status = (System.Windows.Controls.Border)Template.FindName($"{desk.DeskUI.Name}status",
-                desk.DeskUI);
-            //Console.WriteLine(((System.Windows.Controls.Border)desk.DeskUI.FindName($"{desk.DeskUI.Name}status")).Name);
-            Console.WriteLine(status == null);*/
+            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString("#23DA36");
         }
 
         #endregion
@@ -250,12 +339,15 @@ namespace Table
 
         private void RefreshDesks(object sender, RoutedEventArgs e)
         {
-            //AddDeskToList();
+            //AddDeskToList("Hello");
         }
 
         private void Connect(object sender, RoutedEventArgs e)
         {
             Console.WriteLine(((System.Windows.Controls.Button)sender).Name);
+            /*UpdateConnectionStateToConnected(foundDesks.Find((desk) => {
+                return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
+            }));*/
             ConnectDevice(foundDesks.Find(desk =>
             {
                 return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
