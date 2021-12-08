@@ -17,11 +17,11 @@ using System.Windows.Threading;
 using System.Windows.Forms;
 using System.Drawing;
 using Microsoft.Win32;
-using Table.Properties;
+using Stacker.Properties;
 using System.Web.Script.Serialization;
 using System.IO;
 
-namespace Table
+namespace Stacker
 {
     public partial class MainWindow : Window
     {
