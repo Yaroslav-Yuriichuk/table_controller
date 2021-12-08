@@ -90,19 +90,26 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="DayModeInfo.cs" />
+    <Compile Include="ApplicationWindows\NewNotification.xaml.cs">
+      <DependentUpon>NewNotification.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DataClasses\DayModeInfo.cs" />
     <Compile Include="ApplicationWindows\HeightAdjust.xaml.cs">
       <DependentUpon>HeightAdjust.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Desk.cs" />
+    <Compile Include="DataClasses\Desk.cs" />
     <Compile Include="Enums\DeskConnectionState.cs" />
     <Compile Include="NewMainWindow.xaml.cs">
       <DependentUpon>NewMainWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Enums\Period.cs" />
     <Compile Include="Enums\State.cs" />
-    <Compile Include="Util.cs" />
+    <Compile Include="Utils\Util.cs" />
     <Page Include="ApplicationWindows\HeightAdjust.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ApplicationWindows\NewNotification.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
