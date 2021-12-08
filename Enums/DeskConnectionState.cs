@@ -9,6 +9,7 @@ namespace Stacker.Enums
     public enum DeskConnectionState
     {
         CONNECTED,
+        CONNECTING,
         NOT_CONNECTED
     }
 }

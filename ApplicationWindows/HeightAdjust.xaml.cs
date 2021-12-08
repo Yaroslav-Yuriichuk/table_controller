@@ -48,7 +48,7 @@ namespace Stacker
             const int Margin = 10;
             var desktopWorkingArea = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea;
             this.Left = desktopWorkingArea.Right - this.Width - Margin;
-            this.Top = desktopWorkingArea.Bottom - this.Height - MainWindowHeight - 2 * Margin;
+            this.Top = desktopWorkingArea.Bottom - this.Height - MainWindowHeight - 3 * Margin / 2;
         }
 
         #endregion
