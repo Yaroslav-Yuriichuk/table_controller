@@ -4,11 +4,19 @@
              xmlns:local="clr-namespace:Table"
              StartupUri="NewMainWindow.xaml">
     <Application.Resources>
-        <Style x:Key="DeskButtonStyle" TargetType="Button">
+        <!--Style x:Key="DeskButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#556B80" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#586E83" />
+                    <Setter Property="Cursor" Value="Hand" />
+                </Trigger>
+            </Style.Triggers>
+        </-->
+        <Style x:Key="DeskButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Cursor" Value="Hand" />
                 </Trigger>
             </Style.Triggers>
