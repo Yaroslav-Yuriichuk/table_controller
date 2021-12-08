@@ -66,6 +66,9 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Table_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Table.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />

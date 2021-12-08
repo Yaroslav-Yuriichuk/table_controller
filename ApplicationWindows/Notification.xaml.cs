@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace Table
+namespace Stacker
 {
     /// <summary>
     /// Логика взаимодействия для Notification.xaml

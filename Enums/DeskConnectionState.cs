@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Table.Enums
+namespace Stacker.Enums
 {
     public enum DeskConnectionState
     {

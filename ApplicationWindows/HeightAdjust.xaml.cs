@@ -13,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Table
+namespace Stacker
 {
     /// <summary>
     /// Логика взаимодействия для HeightAdjust.xaml
@@ -21,10 +21,14 @@ namespace Table
     public partial class HeightAdjust : Window
     {
         public static Action OnClose;
+
+        #region
+
         public HeightAdjust()
         {
             InitializeComponent();
             NewMainWindow.OnClose += CloseWindow;
+            PlaceWindow();
         }
 
         protected override void OnClosing(CancelEventArgs e)
@@ -34,12 +38,27 @@ namespace Table
             base.OnClosing(e);
         }
 
-        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        #endregion
+
+        #region XAML
+
+        private void PlaceWindow()
+        {
+            const int MainWindowHeight = 250;
+            const int Margin = 10;
+            var desktopWorkingArea = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea;
+            this.Left = desktopWorkingArea.Right - this.Width - Margin;
+            this.Top = desktopWorkingArea.Bottom - this.Height - MainWindowHeight - 2 * Margin;
+        }
+
+        #endregion
+
+        /*protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
 
             this.DragMove();
-        }
+        }*/
 
         #region
         private void ApplyChanges(object sender, RoutedEventArgs e)

@@ -18,14 +18,14 @@ using System.Windows.Forms;
 using System.ComponentModel;
 using System.IO;
 using System.Web.Script.Serialization;
-using Table;
-using Table.Enums;
+using Stacker;
+using Stacker.Enums;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Bluetooth;
 using Windows.Storage.Streams;
 
-namespace Table
+namespace Stacker
 {
     /// <summary>
     /// Логика взаимодействия для NewMainWindow.xaml
@@ -53,8 +53,11 @@ namespace Table
 
         private bool isHeightAdjustWindowOpened = false;
 
+        // Timer sending notifications
         private DispatcherTimer notificationTimer;
+        // Timer thar starts moving table after notification
         private DispatcherTimer moveTableTimer;
+        // Timer updating tha labels
         private DispatcherTimer dayInfoTimer;
 
         private System.Windows.Forms.NotifyIcon ni;
@@ -65,7 +68,7 @@ namespace Table
         private DateTime timeNotificationIntervalStarted;
 
         private List<Desk> foundDesks;
-        private Desk connectedDesk;
+        //private Desk connectedDesk;
 
         #region BLUETOOTH_FIELDS
 
@@ -93,29 +96,24 @@ namespace Table
             UpdateTimeLabels();
             UpdateIntervalLabels();
             foundDesks = new List<Desk>();
-            /*new Thread(() =>
-            {
-                Thread.CurrentThread.IsBackground = true;
-                //Console.WriteLine("cvbdjks");
-                StartScanningForDevices();
-            }).Start();*/
             heightCharacteristic = null;
             StartScanningForDevices();
-            PlaceProgram();
+            PlaceWindow();
         }
 
-        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        /*protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
 
             this.DragMove();
-        }
+        }*/
 
         protected override void OnClosing(CancelEventArgs e)
         {
             OnClose?.Invoke();
             HeightAdjust.OnClose -= SetHeightAdjustNotOpened;
             deviceWatcher.Stop();
+            ni.Dispose();
             base.OnClosing(e);
         }
 
@@ -258,12 +256,12 @@ namespace Table
             DesksList.Children.Add(newDeskUI.Item1);
         }*/
 
-        private void PlaceProgram()
+        private void PlaceWindow()
         {
-            const int margin = 10;
+            const int Margin = 10;
             var desktopWorkingArea = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea;
-            this.Left = desktopWorkingArea.Right - this.Width - margin;
-            this.Top = desktopWorkingArea.Bottom - this.Height - margin;
+            this.Left = desktopWorkingArea.Right - this.Width - Margin;
+            this.Top = desktopWorkingArea.Bottom - this.Height - Margin;
         }
 
         private void UpdateTimeLabels()

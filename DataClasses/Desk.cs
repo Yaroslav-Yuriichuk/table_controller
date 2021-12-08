@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Table.Enums;
+using Stacker.Enums;
 using System.Windows.Controls;
 using Windows.Devices.Enumeration;
 
-namespace Table
+namespace Stacker
 {
     class Desk
     {
