@@ -260,9 +260,10 @@ namespace Table
 
         private void PlaceProgram()
         {
+            const int margin = 10;
             var desktopWorkingArea = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea;
-            this.Left = desktopWorkingArea.Right - this.Width - 10;
-            this.Top = desktopWorkingArea.Bottom - this.Height - 10;
+            this.Left = desktopWorkingArea.Right - this.Width - margin;
+            this.Top = desktopWorkingArea.Bottom - this.Height - margin;
         }
 
         private void UpdateTimeLabels()
@@ -344,7 +345,7 @@ namespace Table
 
         private void Connect(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine(((System.Windows.Controls.Button)sender).Name);
+            ///Console.WriteLine(((System.Windows.Controls.Button)sender).Name);
             /*UpdateConnectionStateToConnected(foundDesks.Find((desk) => {
                 return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
             }));*/
@@ -713,7 +714,6 @@ namespace Table
             // Note: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
             BluetoothLEDevice bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(deviceInfo.Id);
             // ...
-            Console.WriteLine(deviceInfo.Name);
 
             GattDeviceServicesResult serviceResult = await bluetoothLeDevice.GetGattServicesAsync();
 
