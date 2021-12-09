@@ -25,6 +25,7 @@ using Windows.Devices.Enumeration;
 using Windows.Devices.Bluetooth;
 using Windows.Storage.Streams;
 using Stacker.ApplicationWindows;
+using Microsoft.Win32;
 
 namespace Stacker
 {
@@ -90,6 +91,8 @@ namespace Stacker
             this.WindowState = WindowState.Normal;
             currentPosition = Position.DOWN;
             currentState = State.NORMAL;
+            SystemEvents.SessionSwitch +=
+                new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
             SetUpTimers();
             SetUpIcon();
             today = LoadTodayInfo();
@@ -313,6 +316,10 @@ namespace Stacker
                 {
                     todayInfo = tmpTodayInfo;
                 }
+                else
+                {
+                    UpdateAllDayModeInfos(tmpTodayInfo);
+                }
             }
 
             return todayInfo;
@@ -323,6 +330,19 @@ namespace Stacker
             File.WriteAllText("AllDaysModeInfo.dat", new JavaScriptSerializer().Serialize(
                 LoadAllDaysModeInfo()));
             File.WriteAllText("TodayModeInfo.dat", new JavaScriptSerializer().Serialize(today));
+        }
+
+        private void SaveAllDaysInfo(List<DayModeInfo> allDayModeInfos)
+        {
+            File.WriteAllText("AllDaysModeInfo.dat", new JavaScriptSerializer().Serialize(
+                allDayModeInfos));
+        }
+
+        private void UpdateAllDayModeInfos(DayModeInfo previousToday)
+        {
+            List<DayModeInfo> allDayModeInfos = LoadAllDaysModeInfo();
+            allDayModeInfos.Add(previousToday);
+            SaveAllDaysInfo(allDayModeInfos);
         }
 
         #endregion
@@ -596,6 +616,10 @@ namespace Stacker
             {
                 today.MinutesInStayMode += 1;
             }
+            if (today.Date.Date != DateTime.Now.Date)
+            {
+                HandleDaySwitch();
+            }
             UpdateTimeLabels();
         }
 
@@ -631,6 +655,13 @@ namespace Stacker
 
         #region TIMERS_UTIL
 
+        private void HandleDaySwitch()
+        {
+            UpdateAllDayModeInfos(today);
+            today = new DayModeInfo(DateTime.Now, 0, 0);
+            UpdateTimeLabels();
+        }
+
         private void StartNotificationTimer()
         {
             notificationTimer.Start();
@@ -652,6 +683,15 @@ namespace Stacker
                 notificationTimer.Tick -= NotifyAboutDown;
                 notificationTimer.Tick += NotifyAboutUp;
             }
+        }
+
+        private void StopAllTimers()
+        {
+            dayInfoTimer.Stop();
+            moveDeskUpTimer.Stop();
+            moveDeskDownTimer.Stop();
+            moveTableTimer.Stop();
+            notificationTimer.Stop();
         }
 
         #endregion
@@ -679,6 +719,23 @@ namespace Stacker
         private void SetHeightAdjustNotOpened()
         {
             isHeightAdjustWindowOpened = false;
+        }
+
+        private void SystemEvents_SessionSwitch(object sender, SessionSwitchEventArgs e)
+        {
+            switch (e.Reason)
+            {
+                case SessionSwitchReason.SessionLock:
+                    StopAllTimers();
+                    break;
+                case SessionSwitchReason.SessionUnlock:
+                    StartNotificationTimer();
+                    if (DateTime.Now.Date != today.Date.Date)
+                    {
+                        HandleDaySwitch();
+                    }
+                    break;
+            }
         }
 
         #endregion
