@@ -20,7 +20,10 @@ namespace Stacker
         public Border StatusUI => statusUI;
 
         public DeviceInformation Device => device;
-        public DeskConnectionState ConnectionState => connectionState;
+        public DeskConnectionState ConnectionState {
+            get => connectionState;
+            set => connectionState = value;
+        }
 
         public Desk(Button deskUI, Border statusUI, DeviceInformation device, DeskConnectionState connectionState)
         {
