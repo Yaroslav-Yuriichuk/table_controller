@@ -26,6 +26,7 @@ using Windows.Devices.Bluetooth;
 using Windows.Storage.Streams;
 using Stacker.ApplicationWindows;
 using Microsoft.Win32;
+using System.Runtime;
 
 namespace Stacker
 {
@@ -45,6 +46,13 @@ namespace Stacker
         private byte[] MOVE_TABLE_UP_COMMAND = { 0xF1, 0xF1, 0x01, 0x00, 0x01, 0x7E };
         private byte[] MOVE_TABLE_DOWN_COMMAND = { 0xF1, 0xF1, 0x02, 0x00, 0x02, 0x7E };
 
+        private const string CONNECTED_COLOR = "#23DA36";
+        private const string NOT_CONNECTED_COLOR = "#D58186";
+        private const string CONNECTING_COLOR = "#F0A202";
+
+        private const int NOTIFY_BEFORE_TIME = 1;
+        private const int SNOOZE_TIME = 5;
+
         #endregion
 
         #region EVENTS
@@ -57,8 +65,10 @@ namespace Stacker
 
         // Timer sending notifications
         private DispatcherTimer notificationTimer;
-        // Timer thar starts moving table after notification
+        // Timer that starts moving table after notification
         private DispatcherTimer moveTableTimer;
+        // Timer that snoozes moving the table
+        private DispatcherTimer snoozeTimer;
         // Timer updating tha labels
         private DispatcherTimer dayInfoTimer;
 
@@ -80,6 +90,8 @@ namespace Stacker
         private DispatcherTimer moveDeskDownTimer;
         private bool isDeskMovingUp = false;
         private bool isDeskMovingDown = false;
+
+        private int deviceId = 0;
 
         #endregion
 
@@ -167,7 +179,7 @@ namespace Stacker
             status.Height = 15;
             status.Width = 15;
             status.CornerRadius = new CornerRadius(7.5);
-            status.Background = (SolidColorBrush)new BrushConverter().ConvertFromString("#D58186");
+            status.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(NOT_CONNECTED_COLOR);
             Grid.SetColumn(status, 1);
 
             return status;
@@ -246,11 +258,12 @@ namespace Stacker
         private void AddDeskToList(DeviceInformation device)
         {
             DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
-            Tuple<System.Windows.Controls.Button, Border> newDeskUI = CreateDeskTemplate($"desk{DesksList.Children.Count}",
+            Tuple<System.Windows.Controls.Button, Border> newDeskUI = CreateDeskTemplate($"desk{deviceId++}",
                 device.Name);
             foundDesks.Add(new Desk(newDeskUI.Item1, newDeskUI.Item2, device, DeskConnectionState.NOT_CONNECTED));
             DesksList.Children.Add(newDeskUI.Item1);
         }
+        
 
         /*private void AddDeskToList(string name)
         {
@@ -283,7 +296,20 @@ namespace Stacker
 
         private void UpdateConnectionStateToConnected(Desk desk)
         {
-            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString("#23DA36");
+            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(CONNECTED_COLOR);
+            desk.ConnectionState = DeskConnectionState.CONNECTED;
+        }
+
+        private void UpdateConnectionStateToNotConnected(Desk desk)
+        {
+            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(NOT_CONNECTED_COLOR);
+            desk.ConnectionState = DeskConnectionState.NOT_CONNECTED;
+        }
+
+        private void UpdateConnectionStateToConnecting(Desk desk)
+        {
+            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(CONNECTING_COLOR);
+            desk.ConnectionState = DeskConnectionState.CONNECTING;
         }
 
         #endregion
@@ -369,10 +395,12 @@ namespace Stacker
             /*UpdateConnectionStateToConnected(foundDesks.Find((desk) => {
                 return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
             }));*/
-            ConnectDevice(foundDesks.Find(desk =>
+            Desk deskToConnect = foundDesks.Find(desk =>
             {
                 return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
-            }).Device);
+            });
+            UpdateConnectionStateToConnecting(deskToConnect);
+            ConnectDevice(deskToConnect);
         }
 
         private void OpenHeightAdjustWindow(object sender, RoutedEventArgs e)
@@ -380,8 +408,7 @@ namespace Stacker
             if (!isHeightAdjustWindowOpened)
             {
                 isHeightAdjustWindowOpened = true;
-                HeightAdjust heightAdjust = new HeightAdjust();
-                heightAdjust.Show();
+                new HeightAdjust().Show();
             }
         }
 
@@ -542,7 +569,7 @@ namespace Stacker
             dayInfoTimer = new DispatcherTimer();
             dayInfoTimer.Interval = new TimeSpan(0, 1, 0);
             dayInfoTimer.Tick += DayInfoTimerTick;
-            dayInfoTimer.Start();
+            //dayInfoTimer.Start();
 
             moveDeskUpTimer = new DispatcherTimer();
             moveDeskUpTimer.Interval = new TimeSpan(0, 0, 0, 0, 200);
@@ -553,13 +580,13 @@ namespace Stacker
             moveDeskDownTimer.Tick += SendCommandToMoveDown;
 
             moveTableTimer = new DispatcherTimer();
-            moveTableTimer.Interval = new TimeSpan(0, 1, 0);
+            moveTableTimer.Interval = new TimeSpan(0, NOTIFY_BEFORE_TIME, 0);
             moveTableTimer.Tick += MoveTable;
 
             notificationTimer = new DispatcherTimer();
             notificationTimer.Interval = new TimeSpan(0, Properties.Settings.Default.UserTimeDown - 1, 0);
             notificationTimer.Tick += NotifyAboutUp;
-            StartNotificationTimer();
+            //StartNotificationTimer();
         }
 
         void SetUpIcon()
@@ -599,6 +626,20 @@ namespace Stacker
         {
             moveTableTimer.Stop();
             Position nextPosition = GetOppositePositionToCurrent();
+            if (nextPosition == Position.UP)
+            {
+                moveDeskDownTimer.Stop();
+                moveDeskUpTimer.Start();
+                isDeskMovingDown = false;
+                isDeskMovingUp = true;
+            }
+            else
+            {
+                moveDeskUpTimer.Stop();
+                moveDeskDownTimer.Start();
+                isDeskMovingUp = false;
+                isDeskMovingDown = true;
+            }
             //SendNotification("Table moved " + nextPosition.ToString());
             UpdateNotificationTimer(nextPosition);
             currentPosition = nextPosition;
@@ -766,10 +807,10 @@ namespace Stacker
             deviceWatcher.Start();
         }
 
-        private async void ConnectDevice(DeviceInformation deviceInfo)
+        private async void ConnectDevice(Desk desk)
         {
             // Note: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
-            BluetoothLEDevice bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(deviceInfo.Id);
+            BluetoothLEDevice bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(desk.Device.Id);
             // ...
 
             GattDeviceServicesResult serviceResult = await bluetoothLeDevice.GetGattServicesAsync();
@@ -792,11 +833,10 @@ namespace Stacker
                                 && characteristic.Uuid.ToString("N").Substring(4, 4) == DESK_HEIGHT_CHARACTERISTIC)
                             {
                                 heightCharacteristic = characteristic;
-                                Console.WriteLine(characteristic.Uuid);
-
-                                UpdateConnectionStateToConnected(foundDesks.Find(desk => {
-                                    return desk.Device == deviceInfo;
-                                }));
+                                //Console.WriteLine(characteristic.Uuid);
+                                dayInfoTimer.Start();
+                                StartNotificationTimer();
+                                UpdateConnectionStateToConnected(desk);
                             }
                         }
                     }
@@ -804,7 +844,8 @@ namespace Stacker
             }
             else
             {
-                Console.WriteLine("Looser");
+                //Console.WriteLine("Looser");
+                UpdateConnectionStateToNotConnected(desk);
             }
         }
 
@@ -868,7 +909,10 @@ namespace Stacker
 
         private void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
         {
-            
+            /*foundDesks.Remove(foundDesks.Find(desk =>
+            {
+                return desk.Device.Id == args.Id;
+            }));*/
         }
 
         private void DeviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)

@@ -28,16 +28,16 @@
                 <RowDefinition Height="40"></RowDefinition>
                 <RowDefinition></RowDefinition>
             </Grid.RowDefinitions>
-            <Label x:Name="Message" Content=""
+            <Label x:Name="Message" Content="Table will go up in one minute"
                    FontSize="15" FontWeight="DemiBold"
                    VerticalContentAlignment="Center"
                    Margin="10 0 0 0"/>
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition></ColumnDefinition>
-                    <ColumnDefinition></ColumnDefinition>
+                    <ColumnDefinition Width="100"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="1" Content="Accept"
+                <Button Grid.Column="0" Content="Accept"
                         FontSize="14" FontWeight="DemiBold"
                         Click="AcceptButtonClick">
                     <Button.Style>
@@ -57,7 +57,36 @@
                                     Background="{TemplateBinding Background}"
                                     CornerRadius="13"
                                     VerticalAlignment="Center"
-                                    Margin="15 0 0 5">
+                                    HorizontalAlignment="Right"
+                                    Margin="0 0 10 5">
+                                <ContentPresenter VerticalAlignment="Center"
+                                                  HorizontalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <Button Grid.Column="1" Content="Snooze"
+                        FontSize="14" FontWeight="DemiBold"
+                        Click="AcceptButtonClick"
+                        HorizontalAlignment="Left">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#C5CAFF" />
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Cursor" Value="Hand" />
+                                    <Setter Property="Background" Value="#C2C7FC" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Height="26" Width="90"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="13"
+                                    VerticalAlignment="Center"
+                                    Margin="0 0 0 5">
                                 <ContentPresenter VerticalAlignment="Center"
                                                   HorizontalAlignment="Center"/>
                             </Border>
