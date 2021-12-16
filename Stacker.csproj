@@ -164,6 +164,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="Setup\Setup.msi" />
     <None Include="Table_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

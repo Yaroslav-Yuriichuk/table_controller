@@ -16,8 +16,8 @@ Download the repository as zip and unpack or navigate to desired folder and run 
 
 ## To run
 
-Open Table.sln in your IDE and click run button
+Open Stacker.sln in your IDE and click run button
 
 ## To install on desktop
 
-In project folder Setup/Release open Setup.msi file and and choose the destination folder to install
+In project folder Setup open Setup.msi file and and choose the destination folder to install
