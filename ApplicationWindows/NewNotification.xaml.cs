@@ -5,39 +5,47 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.Windows.Threading;
+using Stacker.Timers;
 
 namespace Stacker.ApplicationWindows
 {
-    /// <summary>
-    /// Логика взаимодействия для NewNotification.xaml
-    /// </summary>
     public partial class NewNotification : Window
     {
-        private DispatcherTimer closeTimer;
+        public static Action OnSnooze;
+
+        private SingleTickTimer closeTimer;
 
         #region WINDOW_METHODS
 
         public NewNotification(string message, bool isMainWindowOpened)
         {
             InitializeComponent();
-            NewMainWindow.OnClose += CloseNotification;
             SetUpTimers();
+            Subscribe();
             Message.Content = message;
             PlaceNotification(isMainWindowOpened);
+            closeTimer.Start();
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            NewMainWindow.OnClose -= CloseNotification;
+            Unsubscribe();
             base.OnClosing(e);
+        }
+
+        #endregion
+
+        #region EVENTS
+
+        private void Subscribe()
+        {
+            NewMainWindow.OnClose += CloseNotification;
+        }
+
+        private void Unsubscribe()
+        {
+            NewMainWindow.OnClose -= CloseNotification;
         }
 
         #endregion
@@ -46,10 +54,7 @@ namespace Stacker.ApplicationWindows
 
         private void SetUpTimers()
         {
-            closeTimer = new DispatcherTimer();
-            closeTimer.Interval = new TimeSpan(0, 0, 25);
-            closeTimer.Tick += Accept;
-            closeTimer.Start();
+            closeTimer = new SingleTickTimer(CloseNotification, new TimeSpan(0, 0, 20));
         }
 
         #endregion
@@ -58,22 +63,26 @@ namespace Stacker.ApplicationWindows
 
         private void AcceptButtonClick(object sender, RoutedEventArgs e)
         {
-            Accept(sender, e);
+            Accept();
         }
 
         #endregion
 
         #region ACTIONS
 
-        private void Accept(object sender, EventArgs e)
+        private void Accept()
         {
-            closeTimer.Stop();
             CloseNotification();
+        }
+
+        private void CloseNotification()
+        {
+            this.Close();
         }
 
         #endregion
 
-        #region XAML
+        #region UI
 
         private void PlaceNotification(bool isMainWindowOpened)
         {
@@ -85,9 +94,5 @@ namespace Stacker.ApplicationWindows
 
         #endregion
 
-        private void CloseNotification()
-        {
-            this.Close();
-        }
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Stacker
 {
     [Serializable]
-    class DayModeInfo
+    public class DayData
     {
         private DateTime date;
         private int minutesInSitMode;
@@ -29,9 +29,9 @@ namespace Stacker
             set => minutesInStayMode = value;
         }
 
-        public DayModeInfo() { }
+        public DayData() { }
 
-        public DayModeInfo(DateTime date, int minutesInSitMode, int minutesInStayMode)
+        public DayData(DateTime date, int minutesInSitMode, int minutesInStayMode)
         {
             this.date = date;
             this.minutesInSitMode = minutesInSitMode;

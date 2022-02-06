@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stacker
 {
-    static class Util
+    public static class Util
     {
         public static string MinutesToHoursString(int minutes)
         {
@@ -22,6 +22,11 @@ namespace Stacker
             {
                 return minutes / 60 + "h " + minutes % 60 + "m";
             }
+        }
+
+        public static Position OppositePosition(Position position)
+        {
+            return position == Position.UP ? Position.DOWN : Position.UP;
         }
     }
 }
