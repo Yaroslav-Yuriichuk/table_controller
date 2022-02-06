@@ -276,7 +276,7 @@
                                 </Border>
                                 <!-- Arrow up -->
                                 <Button Grid.Column="2"
-                                        Click="ToggleMovingTableUp">
+                                        Click="MoveTableUpButtonPressed">
                                     <Button.Style>
                                         <Style TargetType="Button">
                                             <Style.Triggers>
@@ -375,7 +375,7 @@
                                 </Border>
                                 <!-- Arrow up -->
                                 <Button Grid.Column="2"
-                                        Click="ToggleMovingTableDown">
+                                        Click="MoveTableDownButtonPressed">
                                     <Button.Style>
                                         <Style TargetType="Button">
                                             <Style.Triggers>

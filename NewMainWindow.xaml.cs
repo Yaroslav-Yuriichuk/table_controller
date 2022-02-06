@@ -1,60 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Windows.Markup;
-using System.Windows.Threading;
-using System.Windows.Forms;
 using System.ComponentModel;
-using System.IO;
-using System.Web.Script.Serialization;
-using Stacker;
 using Stacker.Enums;
-using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
-using Windows.Devices.Bluetooth;
-using Windows.Storage.Streams;
 using Stacker.ApplicationWindows;
-using Microsoft.Win32;
-using System.Runtime;
+using Stacker.Controllers;
 
 namespace Stacker
 {
-    /// <summary>
-    /// Логика взаимодействия для NewMainWindow.xaml
-    /// </summary>
     public partial class NewMainWindow : Window
     {
-        #region CONSTANTS
-
-        private const int MaxTimeUp = 120;
-        private const int MaxTimeDown = 120;
-        private const int MinTimeUp = 2;
-        private const int MinTimeDown = 2;
-
-        private const string DESK_HEIGHT_CHARACTERISTIC = "ff01";
-        private byte[] MOVE_TABLE_UP_COMMAND = { 0xF1, 0xF1, 0x01, 0x00, 0x01, 0x7E };
-        private byte[] MOVE_TABLE_DOWN_COMMAND = { 0xF1, 0xF1, 0x02, 0x00, 0x02, 0x7E };
-
-        private const string CONNECTED_COLOR = "#23DA36";
-        private const string NOT_CONNECTED_COLOR = "#D58186";
-        private const string CONNECTING_COLOR = "#F0A202";
-
-        private const int NOTIFY_BEFORE_TIME = 1;
-        private const int SNOOZE_TIME = 5;
-
-        #endregion
-
         #region EVENTS
 
         public static Action OnClose;
@@ -63,35 +19,11 @@ namespace Stacker
 
         private bool isHeightAdjustWindowOpened = false;
 
-        // Timer sending notifications
-        private DispatcherTimer notificationTimer;
-        // Timer that starts moving table after notification
-        private DispatcherTimer moveTableTimer;
-        // Timer that snoozes moving the table
-        private DispatcherTimer snoozeTimer;
-        // Timer updating tha labels
-        private DispatcherTimer dayInfoTimer;
-
         private System.Windows.Forms.NotifyIcon ni;
-
-        private DayModeInfo today;
-        private Position currentPosition;
-        private State currentState;
-        private DateTime timeNotificationIntervalStarted;
-
-        private List<Desk> foundDesks;
-        //private Desk connectedDesk;
 
         #region BLUETOOTH_FIELDS
 
-        private DeviceWatcher deviceWatcher;
-        private GattCharacteristic heightCharacteristic;
-        private DispatcherTimer moveDeskUpTimer;
-        private DispatcherTimer moveDeskDownTimer;
-        private bool isDeskMovingUp = false;
-        private bool isDeskMovingDown = false;
-
-        private int deviceId = 0;
+        private int generatedDeviceId = 0;
 
         #endregion
 
@@ -100,179 +32,61 @@ namespace Stacker
         public NewMainWindow()
         {
             InitializeComponent();
-            this.WindowState = WindowState.Normal;
-            currentPosition = Position.DOWN;
-            currentState = State.NORMAL;
-            SystemEvents.SessionSwitch +=
-                new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
-            SetUpTimers();
-            SetUpIcon();
-            today = LoadTodayInfo();
-            OnClose += SaveDaysInfo;
-            HeightAdjust.OnClose += SetHeightAdjustNotOpened;
+            Subscribe();
             UpdateTimeLabels();
+            this.WindowState = WindowState.Normal;
+            SetUpIcon();
             UpdateIntervalLabels();
-            foundDesks = new List<Desk>();
-            heightCharacteristic = null;
-            StartScanningForDevices();
             PlaceWindow();
         }
-
-        /*protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-        {
-            base.OnMouseLeftButtonDown(e);
-
-            this.DragMove();
-        }*/
 
         protected override void OnClosing(CancelEventArgs e)
         {
             OnClose?.Invoke();
-            HeightAdjust.OnClose -= SetHeightAdjustNotOpened;
-            deviceWatcher.Stop();
             ni.Dispose();
+            Unsubscribe();
+            StackerController.Instance.Unsubscribe();
             base.OnClosing(e);
         }
 
         #endregion
 
-        #region XAML
-        /*private System.Windows.Controls.Button CreateDeskTemplate(string deskXName, string deskName)
+        #region EVENTS
+
+        private void Subscribe()
         {
-            System.Windows.Controls.Button desk = new System.Windows.Controls.Button();
-
-            desk.Name = deskXName;
-            desk.MouseDoubleClick += Connect;
-            desk.VerticalAlignment = VerticalAlignment.Top;
-            desk.Margin = new Thickness(0, 3, 0, 0);
-
-            Style style = System.Windows.Application.Current.FindResource("DeskButtonStyle") as Style;
-
-            string template = "<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType=\"Button\"> " +
-                                    "<Border Background = \"{TemplateBinding Background}\" Width = \"160\" Height = \"30\" CornerRadius = \"15\">" +
-                                            "<Grid>" +
-                                                "<Grid.ColumnDefinitions>" +
-                                                    "<ColumnDefinition></ColumnDefinition>" +
-                                                    "<ColumnDefinition Width = \"25\"></ColumnDefinition>" +
-                                                "</Grid.ColumnDefinitions>" +
-                                               $"<Label Content = \"{deskName}\" FontSize = \"14\" FontWeight = \"DemiBold\" VerticalAlignment = \"Top\" Margin = \"10 0 0 0\" />" +
-                                               $"<Border Name=\"{deskXName}status\" Grid.Column = \"1\" Height = \"15\" Width = \"15\" Background = \"#D58186\" CornerRadius = \"7.5\" />" + 
-                                            "</Grid>" +
-                                    "</Border>" +
-                              "</ControlTemplate> ";
-
-
-            desk.Style = style;
-            desk.Template = (ControlTemplate) XamlReader.Parse(template);
-
-            Grid.SetRow(desk, DesksList.Children.Count);
-
-            return desk;
-        }*/
-        
-        #region DESK_XAML_PART
-
-        private Border CreateStatusBorder()
-        {
-            Border status = new Border();
-
-            status.Height = 15;
-            status.Width = 15;
-            status.CornerRadius = new CornerRadius(7.5);
-            status.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(NOT_CONNECTED_COLOR);
-            Grid.SetColumn(status, 1);
-
-            return status;
+            HeightAdjust.OnClose += SetHeightAdjustNotOpened;
+            StackerController.Instance.OnDeviceAdded += AddDeskToList;
+            StackerController.Instance.OnNotificationToBeSent += SendNotification;
+            StackerController.Instance.OnTodayDayDataChanged += UpdateTimeLabels;
         }
 
-        private System.Windows.Controls.Label CreateNameLabel(string deskName)
+        private void Unsubscribe()
         {
-            System.Windows.Controls.Label label = new System.Windows.Controls.Label();
-
-            label.Content = deskName;
-            label.FontSize = 14;
-            label.FontWeight = FontWeights.DemiBold;
-            label.Margin = new Thickness(10, 0, 0, 0);
-
-            return label;
-        }
-
-        private Tuple<Grid, Border> CreateDeskGrid(string deskName)
-        {
-            Grid grid = new Grid();
-
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(25) });
-
-            Border status = CreateStatusBorder();
-
-            grid.Children.Add(CreateNameLabel(deskName));
-            grid.Children.Add(status);
-
-            return new Tuple<Grid, Border> (grid, status);
-        }
-
-        private Tuple<Border, Border> CreateDeskBorder(string deskName)
-        {
-            Border border = new Border();
-
-            border.Width = 160;
-            border.Height = 30;
-            border.CornerRadius = new CornerRadius(15);
-            border.Background = (SolidColorBrush)new BrushConverter().ConvertFromString("#556B80");
-
-            Tuple<Grid, Border> values = CreateDeskGrid(deskName);
-            border.Child = values.Item1;
-
-            return new Tuple<Border, Border> (border, values.Item2);
+            HeightAdjust.OnClose -= SetHeightAdjustNotOpened;
+            StackerController.Instance.OnDeviceAdded -= AddDeskToList;
+            StackerController.Instance.OnNotificationToBeSent -= SendNotification;
+            StackerController.Instance.OnTodayDayDataChanged -= UpdateTimeLabels;
         }
 
         #endregion
 
-
-        private Tuple<System.Windows.Controls.Button, Border> CreateDeskTemplate(string deskXName, string deskName)
-        {
-            System.Windows.Controls.Button button = new System.Windows.Controls.Button();
-            Style style = System.Windows.Application.Current.FindResource("DeskButtonStyle") as Style;
-
-            button.Name = deskXName;
-            button.Width = 160;
-            button.Height = 30;
-            button.Background = Brushes.Transparent;
-            button.MouseDoubleClick += Connect;
-
-            Tuple<Border, Border> values = CreateDeskBorder(deskName);
-            button.Content = values.Item1;
-            button.Style = style;
-
-            string template = "<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType=\"Button\">" +
-                                    "<ContentPresenter VerticalAlignment=\"Center\" HorizontalAlignment=\"Center\" /> " + 
-                               "</ControlTemplate>";
-            button.Template = (ControlTemplate)XamlReader.Parse(template);
-
-            Grid.SetRow(button, DesksList.Children.Count);
-
-            return new Tuple<System.Windows.Controls.Button, Border>(button, values.Item2);
-        }
+        #region XAML
 
         private void AddDeskToList(DeviceInformation device)
         {
-            DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
-            Tuple<System.Windows.Controls.Button, Border> newDeskUI = CreateDeskTemplate($"desk{deviceId++}",
-                device.Name);
-            foundDesks.Add(new Desk(newDeskUI.Item1, newDeskUI.Item2, device, DeskConnectionState.NOT_CONNECTED));
-            DesksList.Children.Add(newDeskUI.Item1);
-        }
-        
+            Console.WriteLine(device.Name);
+            this.Dispatcher.Invoke(() =>
+            {
+                Tuple<System.Windows.Controls.Button, Border> newDeskUI = XAMLUtil.CreateDeskTemplate(
+                    $"desk{generatedDeviceId++}", device.Name, DesksList, Connect);
+                StackerController.Instance.FoundDesks.Add(
+                    new Desk(newDeskUI.Item1, newDeskUI.Item2, device, DeskConnectionState.NOT_CONNECTED));
 
-        /*private void AddDeskToList(string name)
-        {
-            DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
-            Tuple<System.Windows.Controls.Button, Border> newDeskUI = CreateDeskTemplate($"desk{DesksList.Children.Count}",
-                name);
-            foundDesks.Add(new Desk(newDeskUI.Item1, newDeskUI.Item2, device, DeskConnectionState.NOT_CONNECTED));
-            DesksList.Children.Add(newDeskUI.Item1);
-        }*/
+                DesksList.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(40) });
+                DesksList.Children.Add(newDeskUI.Item1);
+            });
+        }
 
         private void PlaceWindow()
         {
@@ -284,100 +98,18 @@ namespace Stacker
 
         private void UpdateTimeLabels()
         {
-            TodaySitModeLabel.Content = Util.MinutesToHoursString(today.MinutesInSitMode);
-            TodayStayModeLabel.Content = Util.MinutesToHoursString(today.MinutesInStayMode);
+            TodaySitModeLabel.Content = Util.MinutesToHoursString(
+                StackerController.Instance.Today.MinutesInSitMode);
+            TodayStayModeLabel.Content = Util.MinutesToHoursString(
+                StackerController.Instance.Today.MinutesInStayMode);
         }
 
         private void UpdateIntervalLabels()
         {
-            SitModeIntervalLabel.Content = Util.MinutesToHoursString(Properties.Settings.Default.UserTimeDown);
-            StayModeIntervalLabel.Content = Util.MinutesToHoursString(Properties.Settings.Default.UserTimeUp);
-        }
-
-        private void UpdateConnectionStateToConnected(Desk desk)
-        {
-            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(CONNECTED_COLOR);
-            desk.ConnectionState = DeskConnectionState.CONNECTED;
-        }
-
-        private void UpdateConnectionStateToNotConnected(Desk desk)
-        {
-            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(NOT_CONNECTED_COLOR);
-            desk.ConnectionState = DeskConnectionState.NOT_CONNECTED;
-        }
-
-        private void UpdateConnectionStateToConnecting(Desk desk)
-        {
-            desk.StatusUI.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(CONNECTING_COLOR);
-            desk.ConnectionState = DeskConnectionState.CONNECTING;
-        }
-
-        #endregion
-
-        #region DAYS_INFO
-
-        private List<DayModeInfo> LoadAllDaysModeInfo()
-        {
-            List<DayModeInfo> daysModeInfos = new List<DayModeInfo>();
-
-            if (File.Exists("AllDaysModeInfo.dat"))
-            {
-                daysModeInfos
-                    = new JavaScriptSerializer().Deserialize<List<DayModeInfo>>(File.ReadAllText("AllDaysModeInfo.dat"));
-            }
-
-            return daysModeInfos;
-        }
-
-        private DayModeInfo LoadTodayInfo()
-        {
-            DayModeInfo todayInfo = new DayModeInfo(DateTime.Now, 0, 0);
-
-            // Maybe program already been opened today and closed
-            if (File.Exists("TodayModeInfo.dat"))
-            {
-                DayModeInfo tmpTodayInfo
-                    = new JavaScriptSerializer().Deserialize<DayModeInfo>(File.ReadAllText("TodayModeInfo.dat"));
-                if (tmpTodayInfo.Date.Date == DateTime.Now.Date)
-                {
-                    todayInfo = tmpTodayInfo;
-                }
-                else
-                {
-                    UpdateAllDayModeInfos(tmpTodayInfo);
-                }
-            }
-
-            return todayInfo;
-        }
-
-        private void SaveDaysInfo()
-        {
-            File.WriteAllText("AllDaysModeInfo.dat", new JavaScriptSerializer().Serialize(
-                LoadAllDaysModeInfo()));
-            File.WriteAllText("TodayModeInfo.dat", new JavaScriptSerializer().Serialize(today));
-        }
-
-        private void SaveAllDaysInfo(List<DayModeInfo> allDayModeInfos)
-        {
-            File.WriteAllText("AllDaysModeInfo.dat", new JavaScriptSerializer().Serialize(
-                allDayModeInfos));
-        }
-
-        private void UpdateAllDayModeInfos(DayModeInfo previousToday)
-        {
-            List<DayModeInfo> allDayModeInfos = LoadAllDaysModeInfo();
-            allDayModeInfos.Add(previousToday);
-            SaveAllDaysInfo(allDayModeInfos);
-        }
-
-        #endregion
-
-        #region USER_SETTINGS
-
-        private void SaveSettings()
-        {
-            Properties.Settings.Default.Save();
+            SitModeIntervalLabel.Content = Util.MinutesToHoursString(
+                Properties.Settings.Default.UserTimeDown);
+            StayModeIntervalLabel.Content = Util.MinutesToHoursString(
+                Properties.Settings.Default.UserTimeUp);
         }
 
         #endregion
@@ -386,29 +118,20 @@ namespace Stacker
 
         private void RefreshDesks(object sender, RoutedEventArgs e)
         {
-            //AddDeskToList("Hello");
+            
         }
 
         private void Connect(object sender, RoutedEventArgs e)
         {
-            ///Console.WriteLine(((System.Windows.Controls.Button)sender).Name);
-            /*UpdateConnectionStateToConnected(foundDesks.Find((desk) => {
-                return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
-            }));*/
-            Desk deskToConnect = foundDesks.Find(desk =>
-            {
-                return desk.DeskUI.Name == ((System.Windows.Controls.Button)sender).Name;
-            });
-            UpdateConnectionStateToConnecting(deskToConnect);
-            ConnectDevice(deskToConnect);
+            StackerController.Instance.Connect(((System.Windows.Controls.Button)sender).Name);
         }
 
         private void OpenHeightAdjustWindow(object sender, RoutedEventArgs e)
         {
             if (!isHeightAdjustWindowOpened)
             {
-                isHeightAdjustWindowOpened = true;
                 new HeightAdjust().Show();
+                isHeightAdjustWindowOpened = true;
             }
         }
 
@@ -418,112 +141,26 @@ namespace Stacker
 
         private void IncrementTimeUp(object sender, RoutedEventArgs e)
         {
-            if (Properties.Settings.Default.UserTimeUp < MaxTimeUp)
-            {
-                Properties.Settings.Default.UserTimeUp += 1;
-                SaveSettings();
-                UpdateIntervalLabels();
-
-                if (currentState == State.NORMAL && currentPosition == Position.UP)
-                {
-                    notificationTimer.Stop();
-
-                    double elapsedTimeInMilliseconds = 
-                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
-
-                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeUp - 1) * 60 * 1000
-                        - (int)elapsedTimeInMilliseconds;
-
-                    notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
-                    notificationTimer.Start();
-                }
-            }
+            StackerController.Instance.IncrementTimeUp();
+            UpdateIntervalLabels();
         }
 
         private void DecrementTimeUp(object sender, RoutedEventArgs e)
         {
-            if (Properties.Settings.Default.UserTimeUp > MinTimeUp)
-            {
-                Properties.Settings.Default.UserTimeUp -= 1;
-                SaveSettings();
-                UpdateIntervalLabels();
-
-                if (currentState == State.NORMAL && currentPosition == Position.UP)
-                {
-                    notificationTimer.Stop();
-
-                    double elapsedTimeInMilliseconds =
-                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
-
-                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeUp - 1) * 60 * 1000
-                        - (int)elapsedTimeInMilliseconds;
-
-                    if (remainingTimeInMilliseconds > 0)
-                    {
-                        notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
-                        notificationTimer.Start();
-                    }
-                    else
-                    {
-                        NotifyAboutDown(sender, e);
-                    }
-                }
-            }
+            StackerController.Instance.DecrementTimeUp();
+            UpdateIntervalLabels();
         }
 
         private void IncrementTimeDown(object sender, RoutedEventArgs e)
         {
-            if (Properties.Settings.Default.UserTimeDown < MaxTimeDown)
-            {
-                Properties.Settings.Default.UserTimeDown += 1;
-                SaveSettings();
-                UpdateIntervalLabels();
-
-                if (currentPosition == Position.DOWN && currentState == State.NORMAL)
-                {
-                    notificationTimer.Stop();
-
-                    double elapsedTimeInMilliseconds =
-                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
-
-                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeDown - 1) * 60 * 1000
-                        - (int)elapsedTimeInMilliseconds;
-
-                    notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
-                    notificationTimer.Start();
-                }
-            }
+            StackerController.Instance.IncrementTimeDown();
+            UpdateIntervalLabels();
         }
 
         private void DecrementTimeDown(object sender, RoutedEventArgs e)
         {
-            if (Properties.Settings.Default.UserTimeDown > MinTimeDown)
-            {
-                Properties.Settings.Default.UserTimeDown -= 1;
-                SaveSettings();
-                UpdateIntervalLabels();
-
-                if (currentState == State.NORMAL && currentPosition == Position.DOWN)
-                {
-                    notificationTimer.Stop();
-
-                    double elapsedTimeInMilliseconds =
-                        (DateTime.Now - timeNotificationIntervalStarted).TotalMilliseconds;
-
-                    int remainingTimeInMilliseconds = (Properties.Settings.Default.UserTimeDown - 1) * 60 * 1000
-                        - (int)elapsedTimeInMilliseconds;
-
-                    if (remainingTimeInMilliseconds > 0)
-                    {
-                        notificationTimer.Interval = new TimeSpan(0, 0, 0, 0, remainingTimeInMilliseconds);
-                        notificationTimer.Start();
-                    }
-                    else
-                    {
-                        NotifyAboutUp(sender, e);
-                    }
-                }
-            }
+            StackerController.Instance.DecrementTimeDown();
+            UpdateIntervalLabels();
         }
 
         #endregion
@@ -564,184 +201,17 @@ namespace Stacker
 
         #region SET_UP
 
-        private void SetUpTimers()
-        {
-            dayInfoTimer = new DispatcherTimer();
-            dayInfoTimer.Interval = new TimeSpan(0, 1, 0);
-            dayInfoTimer.Tick += DayInfoTimerTick;
-            //dayInfoTimer.Start();
-
-            moveDeskUpTimer = new DispatcherTimer();
-            moveDeskUpTimer.Interval = new TimeSpan(0, 0, 0, 0, 200);
-            moveDeskUpTimer.Tick += SendCommandToMoveUp;
-            
-            moveDeskDownTimer = new DispatcherTimer();
-            moveDeskDownTimer.Interval = new TimeSpan(0, 0, 0, 0, 200);
-            moveDeskDownTimer.Tick += SendCommandToMoveDown;
-
-            moveTableTimer = new DispatcherTimer();
-            moveTableTimer.Interval = new TimeSpan(0, NOTIFY_BEFORE_TIME, 0);
-            moveTableTimer.Tick += MoveTable;
-
-            notificationTimer = new DispatcherTimer();
-            notificationTimer.Interval = new TimeSpan(0, Properties.Settings.Default.UserTimeDown - 1, 0);
-            notificationTimer.Tick += NotifyAboutUp;
-            //StartNotificationTimer();
-        }
-
         void SetUpIcon()
         {
             ni = new System.Windows.Forms.NotifyIcon();
             ni.Icon = new System.Drawing.Icon("Table.ico");
-            ni.Text = "TableController";
+            ni.Text = "Stacker";
             ni.Visible = true;
             ni.Click += IconClicked;
 
             ni.ContextMenuStrip = new System.Windows.Forms.ContextMenuStrip();
             ni.ContextMenuStrip.Items.Add("Open", System.Drawing.Image.FromFile("Table.ico"), IconOpenClicked);
             ni.ContextMenuStrip.Items.Add("Close", System.Drawing.Image.FromFile("Table.ico"), IconCloseClicked);
-        }
-
-        #endregion
-
-        #region TIMERS_FUNCTIONS
-
-        private void NotifyAboutUp(object sender, EventArgs e)
-        {
-            SendNotification("Table will go Up in 1 minute!");
-            notificationTimer.Stop();
-            moveTableTimer.Start();
-            currentState = State.WAITING_FOR_ACCEPTANCE;
-        }
-
-        private void NotifyAboutDown(object sender, EventArgs e)
-        {
-            SendNotification("Table will go DOWN in 1 minute!");
-            notificationTimer.Stop();
-            moveTableTimer.Start();
-            currentState = State.WAITING_FOR_ACCEPTANCE;
-        }
-
-        private void MoveTable(object sender, EventArgs e)
-        {
-            moveTableTimer.Stop();
-            Position nextPosition = GetOppositePositionToCurrent();
-            if (nextPosition == Position.UP)
-            {
-                moveDeskDownTimer.Stop();
-                moveDeskUpTimer.Start();
-                isDeskMovingDown = false;
-                isDeskMovingUp = true;
-            }
-            else
-            {
-                moveDeskUpTimer.Stop();
-                moveDeskDownTimer.Start();
-                isDeskMovingUp = false;
-                isDeskMovingDown = true;
-            }
-            //SendNotification("Table moved " + nextPosition.ToString());
-            UpdateNotificationTimer(nextPosition);
-            currentPosition = nextPosition;
-            currentState = State.NORMAL;
-            StartNotificationTimer();
-        }
-
-        private void DayInfoTimerTick(object sender, EventArgs e)
-        {
-            if (currentPosition == Position.DOWN)
-            {
-                today.MinutesInSitMode += 1;
-            }
-            else
-            {
-                today.MinutesInStayMode += 1;
-            }
-            if (today.Date.Date != DateTime.Now.Date)
-            {
-                HandleDaySwitch();
-            }
-            UpdateTimeLabels();
-        }
-
-        private async void SendCommandToMoveUp(object sender, EventArgs e)
-        {
-            var writer = new DataWriter();
-            writer.WriteBytes(MOVE_TABLE_UP_COMMAND);
-
-            GattCommunicationStatus result = await heightCharacteristic.WriteValueAsync(writer.DetachBuffer());
-            if (result != GattCommunicationStatus.Success)
-            {
-                Console.WriteLine("Failed to move up");
-                isDeskMovingUp = false;
-                moveDeskUpTimer.Stop();
-            }
-        }
-
-        private async void SendCommandToMoveDown(object sender, EventArgs e)
-        {
-            var writer = new DataWriter();
-            writer.WriteBytes(MOVE_TABLE_DOWN_COMMAND);
-
-            GattCommunicationStatus result = await heightCharacteristic.WriteValueAsync(writer.DetachBuffer());
-            if (result != GattCommunicationStatus.Success)
-            {
-                Console.WriteLine("Failed to move down");
-                isDeskMovingDown = false;
-                moveDeskDownTimer.Stop();
-            }
-        }
-
-        #endregion
-
-        #region TIMERS_UTIL
-
-        private void HandleDaySwitch()
-        {
-            UpdateAllDayModeInfos(today);
-            today = new DayModeInfo(DateTime.Now, 0, 0);
-            UpdateTimeLabels();
-        }
-
-        private void StartNotificationTimer()
-        {
-            notificationTimer.Start();
-            timeNotificationIntervalStarted = DateTime.Now;
-        }
-
-        // Updates nitification timer when table is about to change position
-        private void UpdateNotificationTimer(Position nextPosition)
-        {
-            if (nextPosition == Position.UP)
-            {
-                notificationTimer.Interval = new TimeSpan(0, Properties.Settings.Default.UserTimeUp - 1, 0);
-                notificationTimer.Tick -= NotifyAboutUp;
-                notificationTimer.Tick += NotifyAboutDown;
-            }
-            else
-            {
-                notificationTimer.Interval = new TimeSpan(0, Properties.Settings.Default.UserTimeDown - 1, 0);
-                notificationTimer.Tick -= NotifyAboutDown;
-                notificationTimer.Tick += NotifyAboutUp;
-            }
-        }
-
-        private void StopAllTimers()
-        {
-            dayInfoTimer.Stop();
-            moveDeskUpTimer.Stop();
-            moveDeskDownTimer.Stop();
-            moveTableTimer.Stop();
-            notificationTimer.Stop();
-        }
-
-        #endregion
-
-        #region POSITIONS_UTIL
-
-        private Position GetOppositePositionToCurrent()
-        {
-            return (currentPosition == Position.DOWN) ? Position.UP : Position.DOWN;
         }
 
         #endregion
@@ -762,174 +232,18 @@ namespace Stacker
             isHeightAdjustWindowOpened = false;
         }
 
-        private void SystemEvents_SessionSwitch(object sender, SessionSwitchEventArgs e)
-        {
-            switch (e.Reason)
-            {
-                case SessionSwitchReason.SessionLock:
-                    StopAllTimers();
-                    break;
-                case SessionSwitchReason.SessionUnlock:
-                    StartNotificationTimer();
-                    if (DateTime.Now.Date != today.Date.Date)
-                    {
-                        HandleDaySwitch();
-                    }
-                    break;
-            }
-        }
-
         #endregion
 
         #region BLUETOOTH
 
-        private void StartScanningForDevices()
+        private void MoveTableUpButtonPressed(object sender, RoutedEventArgs e)
         {
-            string[] requestedProperties = { "System.Devices.Aep.DeviceAddress", "System.Devices.Aep.IsConnected" };
-
-            deviceWatcher =
-                        DeviceInformation.CreateWatcher(
-                                Windows.Devices.Bluetooth.BluetoothLEDevice.GetDeviceSelectorFromPairingState(false),
-                                requestedProperties,
-                                DeviceInformationKind.AssociationEndpoint);
-
-            // Register event handlers before starting the watcher.
-            // Added, Updated and Removed are required to get all nearby devices
-            deviceWatcher.Added += DeviceWatcher_Added;
-            deviceWatcher.Updated += DeviceWatcher_Updated;
-            deviceWatcher.Removed += DeviceWatcher_Removed;
-
-            // EnumerationCompleted and Stopped are optional to implement.
-            deviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
-            deviceWatcher.Stopped += DeviceWatcher_Stopped;
-
-            // Start the watcher.
-            deviceWatcher.Start();
+            StackerController.Instance.ConnectedDevice?.StartMovingTableUp();
         }
 
-        private async void ConnectDevice(Desk desk)
+        private void MoveTableDownButtonPressed(object sender, RoutedEventArgs e)
         {
-            // Note: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
-            BluetoothLEDevice bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(desk.Device.Id);
-            // ...
-
-            GattDeviceServicesResult serviceResult = await bluetoothLeDevice.GetGattServicesAsync();
-
-            if (serviceResult.Status == GattCommunicationStatus.Success)
-            {
-                var services = serviceResult.Services;
-                foreach (var service in services)
-                {
-                    GattCharacteristicsResult charachterisicResult = await service.GetCharacteristicsAsync();
-
-                    if (charachterisicResult.Status == GattCommunicationStatus.Success)
-                    {
-                        var characteristics = charachterisicResult.Characteristics;
-                        foreach (var characteristic in characteristics)
-                        {
-                            GattCharacteristicProperties properties = characteristic.CharacteristicProperties;
-
-                            if (properties.HasFlag(GattCharacteristicProperties.WriteWithoutResponse)
-                                && characteristic.Uuid.ToString("N").Substring(4, 4) == DESK_HEIGHT_CHARACTERISTIC)
-                            {
-                                heightCharacteristic = characteristic;
-                                //Console.WriteLine(characteristic.Uuid);
-                                dayInfoTimer.Start();
-                                StartNotificationTimer();
-                                UpdateConnectionStateToConnected(desk);
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                //Console.WriteLine("Looser");
-                UpdateConnectionStateToNotConnected(desk);
-            }
-        }
-
-        private void ToggleMovingTableUp(object sender, RoutedEventArgs e)
-        {
-            if (heightCharacteristic != null)
-            {
-                if (isDeskMovingUp)
-                {
-                    moveDeskUpTimer.Stop();
-                    isDeskMovingUp = false;
-                }
-                else if (isDeskMovingDown)
-                {
-                    moveDeskDownTimer.Stop();
-                    moveDeskUpTimer.Start();
-                    isDeskMovingDown = false;
-                    isDeskMovingUp = true;
-                }
-                else
-                {
-                    moveDeskUpTimer.Start();
-                    isDeskMovingUp = true;
-                }
-            }
-        }
-
-        private void ToggleMovingTableDown(object sender, RoutedEventArgs e)
-        {
-            if (heightCharacteristic != null)
-            {
-                if (isDeskMovingDown)
-                {
-                    moveDeskDownTimer.Stop();
-                    isDeskMovingDown = false;
-                }
-                else if (isDeskMovingUp)
-                {
-                    moveDeskUpTimer.Stop();
-                    moveDeskDownTimer.Start();
-                    isDeskMovingUp = false;
-                    isDeskMovingDown = true;
-                }
-                else
-                {
-                    moveDeskDownTimer.Start();
-                    isDeskMovingDown = true;
-                }
-            }
-        }
-
-        private void DeviceWatcher_Stopped(DeviceWatcher sender, object args)
-        {
-            
-        }
-
-        private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
-        {
-            
-        }
-
-        private void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
-        {
-            /*foundDesks.Remove(foundDesks.Find(desk =>
-            {
-                return desk.Device.Id == args.Id;
-            }));*/
-        }
-
-        private void DeviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)
-        {
-            
-        }
-
-        private void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
-        {
-            if (args.Name != string.Empty)
-            {
-                this.Dispatcher.Invoke(() =>
-                {
-                    AddDeskToList(args);
-                });
-                Console.WriteLine(args.Name);
-            }
+            StackerController.Instance.ConnectedDevice?.StartMovingTableDown();
         }
 
         #endregion
