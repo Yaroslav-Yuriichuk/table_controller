@@ -19,6 +19,7 @@ namespace Stacker.Bluetooth
 
         public static async Task<ConnectedDevice> ConnectDevice(Desk desk)
         {
+            Console.WriteLine(desk.Device.Name);
             // Note: BluetoothLEDevice.FromIdAsync must be called from a UI thread because it may prompt for consent.
             BluetoothLEDevice bluetoothLeDevice = await BluetoothLEDevice.FromIdAsync(desk.Device.Id);
             desk.ConnectionState = DeskConnectionState.CONNECTING;

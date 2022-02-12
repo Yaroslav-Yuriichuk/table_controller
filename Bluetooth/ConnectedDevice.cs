@@ -2,9 +2,8 @@ using System;
 using System.Windows.Threading;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
-using Stacker.Bluetooth;
 
-namespace Stacker
+namespace Stacker.Bluetooth
 {
     public class ConnectedDevice
     {

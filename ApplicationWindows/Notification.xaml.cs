@@ -10,7 +10,7 @@ using Stacker.Timers;
 
 namespace Stacker.ApplicationWindows
 {
-    public partial class NewNotification : Window
+    public partial class Notification : Window
     {
         public static Action OnSnooze;
 
@@ -18,7 +18,7 @@ namespace Stacker.ApplicationWindows
 
         #region WINDOW_METHODS
 
-        public NewNotification(string message, bool isMainWindowOpened)
+        public Notification(string message, bool isMainWindowOpened)
         {
             InitializeComponent();
             SetUpTimers();
@@ -40,12 +40,12 @@ namespace Stacker.ApplicationWindows
 
         private void Subscribe()
         {
-            NewMainWindow.OnClose += CloseNotification;
+            MainWindow.OnClose += CloseNotification;
         }
 
         private void Unsubscribe()
         {
-            NewMainWindow.OnClose -= CloseNotification;
+            MainWindow.OnClose -= CloseNotification;
         }
 
         #endregion
@@ -66,12 +66,23 @@ namespace Stacker.ApplicationWindows
             Accept();
         }
 
+        private void SnoozeButtonClick(object sender, RoutedEventArgs e)
+        {
+            Snooze();
+        }
+
         #endregion
 
         #region ACTIONS
 
         private void Accept()
         {
+            CloseNotification();
+        }
+
+        private void Snooze()
+        {
+            OnSnooze?.Invoke();
             CloseNotification();
         }
 
@@ -87,12 +98,12 @@ namespace Stacker.ApplicationWindows
         private void PlaceNotification(bool isMainWindowOpened)
         {
             int Margin = isMainWindowOpened ? 15 : 10;
-            var desktopWorkingArea = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea;
+
+            var desktopWorkingArea = System.Windows.SystemParameters.WorkArea;
             this.Left = desktopWorkingArea.Right - this.Width - Margin;
             this.Top = desktopWorkingArea.Bottom - this.Height - Margin;
         }
 
         #endregion
-
     }
 }

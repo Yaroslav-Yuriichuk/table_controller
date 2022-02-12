@@ -3,6 +3,7 @@ using Stacker.Timers;
 using System;
 using System.Collections.Generic;
 using Stacker.DaysData;
+using Stacker.ApplicationWindows;
 using Windows.Devices.Enumeration;
 using Microsoft.Win32;
 
@@ -10,7 +11,7 @@ namespace Stacker.Controllers
 {
     public class StackerController
     {
-        #region SHITTY_SINGLETON
+        #region Shitty singleton
 
         private static StackerController instance;
 
@@ -21,7 +22,7 @@ namespace Stacker.Controllers
 
         #endregion
 
-        #region CONSTANTS
+        #region Constants
 
         private const int MaxTimeUp = 120;
         private const int MaxTimeDown = 120;
@@ -29,15 +30,17 @@ namespace Stacker.Controllers
         private const int MinTimeDown = 2;
 
         private const int MinutesAfterNotificationBeforeMoving = 1;
-        private const int SNOOZE_TIME = 5;
+        private const int SnoozeTimeInMinutes = 1;
 
         #endregion
 
-        #region EVENTS
+        #region Events
 
         public Action OnTodayDayDataChanged;
         public Action<string> OnNotificationToBeSent;
+
         public Action<DeviceInformation> OnDeviceAdded;
+        public Action<DeviceInformationUpdate> OnDeviceRemoved;
         #endregion
 
         public Position CurrentPosition { get; private set; } = Position.DOWN;
@@ -60,54 +63,65 @@ namespace Stacker.Controllers
 
         private AlternatingTicksTimer notificationTimer;
         private SingleTickTimer moveTableAfterNotificationTimer;
-        //private DispatcherTimer snoozeTimer;
+        private UpdatableSingleTickTimer snoozeTimer;
         private DayDataCounter dayDataCounter;
 
         public List<Desk> FoundDesks { get; private set; } = new List<Desk>();
 
         public ConnectedDevice ConnectedDevice { get; private set; }
-        public DeviceScanner DeviceScanner { get; private set; }
+        private DeviceScanner deviceScanner;
 
         private StackerController()
         {
             Today = DayDataSaver.LoadTodayDayData();
             SetUpTimers();
             dayDataCounter = new DayDataCounter();
-            DeviceScanner = new DeviceScanner();
+            deviceScanner = new DeviceScanner();
             Subscribe();
-            DeviceScanner.StartScanning();
-            dayDataCounter.Start();
-            notificationTimer.Start();
+            deviceScanner.StartScanning();
         }
 
-        #region EVENTS
+        #region Events
 
         private void Subscribe()
         {
-            DeviceScanner.OnDeviceAdded += AddDevice;
+            MainWindow.OnClose += Unsubscribe;
+            MainWindow.OnClose += SaveData;
+            Notification.OnSnooze += Snooze;
+            deviceScanner.OnDeviceAdded += AddDevice;
+            deviceScanner.OnDeviceRemoved += RemoveDevice;
             SystemEvents.SessionSwitch +=
                 new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
         }
 
         public void Unsubscribe()
         {
-            DeviceScanner.OnDeviceAdded -= AddDevice;
+            MainWindow.OnClose -= Unsubscribe;
+            MainWindow.OnClose -= SaveData;
+            Notification.OnSnooze -= Snooze;
+            deviceScanner.OnDeviceAdded -= AddDevice;
+            deviceScanner.OnDeviceRemoved -= RemoveDevice;
             SystemEvents.SessionSwitch -=
                 new SessionSwitchEventHandler(SystemEvents_SessionSwitch);
         }
 
         #endregion
 
-        #region USER_SETTINGS
+        #region User settings
 
         private void SaveSettings()
         {
             Properties.Settings.Default.Save();
         }
 
+        private void SaveData()
+        {
+            DayDataSaver.SaveTodayDayData(Today);
+        }
+
         #endregion
 
-        #region SET_UP
+        #region Set up
 
         private void SetUpTimers()
         {
@@ -117,11 +131,13 @@ namespace Stacker.Controllers
             notificationTimer = new AlternatingTicksTimer(
                 NotifyAboutUp, new TimeSpan(0, Properties.Settings.Default.UserTimeDown - 1, 0),
                 NotifyAboutDown, new TimeSpan(0, Properties.Settings.Default.UserTimeUp - 1, 0));
+
+            snoozeTimer = new UpdatableSingleTickTimer();
         }
 
         #endregion
 
-        #region TIMERS_FUNCTIONS
+        #region Timers functions
 
         private void NotifyAboutUp()
         {
@@ -155,9 +171,19 @@ namespace Stacker.Controllers
             notificationTimer.Start();
         }
 
+        private void Snooze()
+        {
+            snoozeTimer.UpdateOnTick(
+                CurrentPosition == Position.UP ? NotifyAboutDown : NotifyAboutUp);
+            snoozeTimer.Start(new TimeSpan(0, SnoozeTimeInMinutes, 0)
+                - moveTableAfterNotificationTimer.ElapsedTimeInCurrentInterval);
+
+            moveTableAfterNotificationTimer.Stop();
+        }
+
         #endregion
 
-        #region TIMERS_MODIFICATIONS
+        #region Timers modifications
 
         public void IncrementTimeUp()
         {
@@ -205,18 +231,19 @@ namespace Stacker.Controllers
 
         #endregion
 
-        #region TIMER_UTIL
+        #region Timers util
 
         private void StopAllTimers()
         {
             notificationTimer.Stop();
             moveTableAfterNotificationTimer.Stop();
             dayDataCounter.Stop();
+            snoozeTimer.Stop();
         }
 
         #endregion
 
-        #region NOTIFICATION
+        #region Notificatio
 
         private void SendNotification(string message)
         {
@@ -225,7 +252,7 @@ namespace Stacker.Controllers
 
         #endregion
 
-        #region LOCK_UNLOCK
+        #region Lock / Unclock
 
         private void SystemEvents_SessionSwitch(object sender, SessionSwitchEventArgs e)
         {
@@ -235,17 +262,17 @@ namespace Stacker.Controllers
                     StopAllTimers();
                     break;
                 case SessionSwitchReason.SessionUnlock:
+                    //TODO: autoconnect
                     ConnectedDevice?.StartMovingTableDown();
                     CurrentPosition = Position.DOWN;
                     CurrentState = State.NORMAL;
-                    //TODO: autoconnect
                     break;
             }
         }
 
         #endregion
 
-        #region BLUETOOTH
+        #region Bluetooth
 
         public async void Connect(string deskXName)
         {
@@ -262,7 +289,14 @@ namespace Stacker.Controllers
 
         private void AddDevice(DeviceInformation args)
         {
+            Console.WriteLine($"Add: {args.Id}");
             OnDeviceAdded?.Invoke(args);
+        }
+
+        private void RemoveDevice(DeviceInformationUpdate args)
+        {
+            Console.WriteLine($"Remove: {args.Id}");
+            OnDeviceRemoved?.Invoke(args);
         }
 
         #endregion

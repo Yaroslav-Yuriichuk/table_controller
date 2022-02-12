@@ -94,35 +94,36 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ApplicationWindows\NewNotification.xaml.cs">
-      <DependentUpon>NewNotification.xaml</DependentUpon>
+    <Compile Include="ApplicationWindows\Notification.xaml.cs">
+      <DependentUpon>Notification.xaml</DependentUpon>
     </Compile>
     <Compile Include="Bluetooth\BluetoothService.cs" />
     <Compile Include="Bluetooth\DeviceScanner.cs" />
-    <Compile Include="DataClasses\ConnectedDevice.cs" />
-    <Compile Include="DataClasses\DayData.cs" />
+    <Compile Include="Bluetooth\ConnectedDevice.cs" />
+    <Compile Include="DaysData\DayData.cs" />
     <Compile Include="ApplicationWindows\HeightAdjust.xaml.cs">
       <DependentUpon>HeightAdjust.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DataClasses\Desk.cs" />
+    <Compile Include="Bluetooth\Desk.cs" />
     <Compile Include="DaysData\DayDataCounter.cs" />
     <Compile Include="DaysData\DayDataSaver.cs" />
     <Compile Include="Enums\DeskConnectionState.cs" />
     <Compile Include="Controllers\StackerController.cs" />
-    <Compile Include="NewMainWindow.xaml.cs">
-      <DependentUpon>NewMainWindow.xaml</DependentUpon>
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Enums\Period.cs" />
     <Compile Include="Enums\State.cs" />
     <Compile Include="Timers\AlternatingTicksTimer.cs" />
     <Compile Include="Timers\SingleTickTimer.cs" />
+    <Compile Include="Timers\UpdatableSingleTickTimer.cs" />
     <Compile Include="Utils\Util.cs" />
     <Compile Include="Utils\XAMLUtil.cs" />
     <Page Include="ApplicationWindows\HeightAdjust.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="ApplicationWindows\NewNotification.xaml">
+    <Page Include="ApplicationWindows\Notification.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -130,7 +131,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="NewMainWindow.xaml">
+    <Page Include="MainWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

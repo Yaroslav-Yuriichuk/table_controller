@@ -9,7 +9,7 @@ using System.Windows.Media;
 using Windows.ApplicationModel.Contacts;
 using Windows.Devices.Enumeration;
 
-namespace Stacker
+namespace Stacker.Bluetooth
 {
     public class Desk
     {

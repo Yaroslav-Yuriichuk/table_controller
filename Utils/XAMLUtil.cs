@@ -53,14 +53,14 @@ namespace Stacker
             return new Tuple<Grid, Border>(grid, status);
         }
 
-        public static Tuple<Border, Border> CreateDeskBorder(string deskName)
+        private static Tuple<Border, Border> CreateDeskBorder(string deskName)
         {
             Border border = new Border();
 
             border.Width = 160;
             border.Height = 30;
             border.CornerRadius = new CornerRadius(15);
-            border.Background = (SolidColorBrush)new BrushConverter().ConvertFromString("#556B80");
+            border.Style = System.Windows.Application.Current.FindResource("DeskBorderStyle") as Style;
 
             Tuple<Grid, Border> values = CreateDeskGrid(deskName);
             border.Child = values.Item1;
@@ -72,7 +72,6 @@ namespace Stacker
             Grid desksList, MouseButtonEventHandler connect)
         {
             Button button = new Button();
-            Style style = System.Windows.Application.Current.FindResource("DeskButtonStyle") as Style;
 
             button.Name = deskXName;
             button.Width = 160;
@@ -82,14 +81,12 @@ namespace Stacker
             
             Tuple<Border, Border> values = CreateDeskBorder(deskName);
             button.Content = values.Item1;
-            button.Style = style;
 
             string template = "<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType=\"Button\">" +
                                     "<ContentPresenter VerticalAlignment=\"Center\" HorizontalAlignment=\"Center\" /> " +
                                "</ControlTemplate>";
             button.Template = (ControlTemplate)XamlReader.Parse(template);
-            
-            //Grid.SetRow(button, StackerController.Instance.FoundDesks.Count);
+
             Grid.SetRow(button, desksList.Children.Count);
             
             return new Tuple<System.Windows.Controls.Button, Border>(button, values.Item2);
