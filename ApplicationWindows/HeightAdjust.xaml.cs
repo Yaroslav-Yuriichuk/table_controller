@@ -13,40 +13,52 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Stacker
+namespace Stacker.ApplicationWindows
 {
-    /// <summary>
-    /// Логика взаимодействия для HeightAdjust.xaml
-    /// </summary>
     public partial class HeightAdjust : Window
     {
         public static Action OnClose;
 
-        #region
+        #region Window methods
 
         public HeightAdjust()
         {
             InitializeComponent();
-            NewMainWindow.OnClose += CloseWindow;
+            Subscribe();
             PlaceWindow();
         }
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            NewMainWindow.OnClose -= CloseWindow;
+            Unsubscribe();
             OnClose?.Invoke();
             base.OnClosing(e);
         }
 
         #endregion
 
-        #region XAML
+        #region Events
+
+        private void Subscribe()
+        {
+            MainWindow.OnClose += CloseWindow;
+        }
+
+        private void Unsubscribe()
+        {
+            MainWindow.OnClose -= CloseWindow;
+        }
+
+        #endregion
+
+        #region UI
 
         private void PlaceWindow()
         {
             const int MainWindowHeight = 250;
             const int Margin = 10;
-            var desktopWorkingArea = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea;
+
+            var desktopWorkingArea = System.Windows.SystemParameters.WorkArea;
             this.Left = desktopWorkingArea.Right - this.Width - Margin;
             this.Top = desktopWorkingArea.Bottom - this.Height - MainWindowHeight - 3 * Margin / 2;
         }
@@ -60,7 +72,7 @@ namespace Stacker
             this.DragMove();
         }*/
 
-        #region
+        #region Actions
         private void ApplyChanges(object sender, RoutedEventArgs e)
         {
             CloseWindow();

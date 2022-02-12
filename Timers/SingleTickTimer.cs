@@ -9,33 +9,52 @@ namespace Stacker.Timers
 {
     public class SingleTickTimer
     {
-        private DispatcherTimer timer;
-        private Action OnTick;
+        protected DispatcherTimer timer;
+        protected Action onTick;
 
-        public SingleTickTimer(Action tick, TimeSpan timeSpan)
+        protected DateTime timeIntervalStarted;
+        protected bool isActive;
+
+        public TimeSpan RemainingTimeToTick
         {
-            OnTick = tick;
+            get => timer.Interval - (DateTime.Now - timeIntervalStarted);
+        }
+
+        public TimeSpan ElapsedTimeInCurrentInterval
+        {
+            get => DateTime.Now - timeIntervalStarted;
+        }
+
+        public SingleTickTimer(Action tick, TimeSpan interval)
+        {
+            onTick = tick;
             timer = new DispatcherTimer()
             {
-                Interval = timeSpan
+                Interval = interval
             };
             timer.Tick += InvokeOnTick;
         }
 
         public void Start()
         {
-            timer.Start();
+            if (onTick != null)
+            {
+                timer.Start();
+                timeIntervalStarted = DateTime.Now;
+                isActive = true;
+            }
         }
 
         public void Stop()
         {
             timer.Stop();
+            isActive = false;
         }
 
         private void InvokeOnTick(object sender, EventArgs e)
         {
-            OnTick?.Invoke();
-            timer.Stop();
+            onTick?.Invoke();
+            Stop();
         }
     }
 }

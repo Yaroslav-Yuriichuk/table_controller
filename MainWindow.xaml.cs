@@ -6,10 +6,11 @@ using Stacker.Enums;
 using Windows.Devices.Enumeration;
 using Stacker.ApplicationWindows;
 using Stacker.Controllers;
+using Stacker.Bluetooth;
 
 namespace Stacker
 {
-    public partial class NewMainWindow : Window
+    public partial class MainWindow : Window
     {
         #region EVENTS
 
@@ -29,14 +30,14 @@ namespace Stacker
 
         #region WINDOW_METHODS
 
-        public NewMainWindow()
+        public MainWindow()
         {
             InitializeComponent();
             Subscribe();
             UpdateTimeLabels();
+            UpdateIntervalLabels();
             this.WindowState = WindowState.Normal;
             SetUpIcon();
-            UpdateIntervalLabels();
             PlaceWindow();
         }
 
@@ -45,9 +46,14 @@ namespace Stacker
             OnClose?.Invoke();
             ni.Dispose();
             Unsubscribe();
-            StackerController.Instance.Unsubscribe();
             base.OnClosing(e);
         }
+
+        /*protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+            this.DragMove();
+        }*/
 
         #endregion
 
@@ -71,7 +77,7 @@ namespace Stacker
 
         #endregion
 
-        #region XAML
+        #region UI
 
         private void AddDeskToList(DeviceInformation device)
         {
@@ -91,7 +97,7 @@ namespace Stacker
         private void PlaceWindow()
         {
             const int Margin = 10;
-            var desktopWorkingArea = System.Windows.Forms.Screen.PrimaryScreen.WorkingArea;
+            var desktopWorkingArea = System.Windows.SystemParameters.WorkArea;
             this.Left = desktopWorkingArea.Right - this.Width - Margin;
             this.Top = desktopWorkingArea.Bottom - this.Height - Margin;
         }
@@ -220,7 +226,7 @@ namespace Stacker
 
         private void SendNotification(string message)
         {
-            new NewNotification(message, this.WindowState == WindowState.Normal).Show();
+            new Notification(message, this.WindowState == WindowState.Normal).Show();
         }
 
         #endregion
